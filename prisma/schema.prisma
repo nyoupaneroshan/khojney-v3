@@ -1,0 +1,409 @@
+// Khojney.com — Nepal's information, education & resource ecosystem
+// Phase 1 schema: Auth + Education (Exams/Colleges/Schools/Universities) + Scholarships + Blog + Search
+// Designed modularly so Phase 2+ modules (Banks, Jobs, Hospitals, etc.) can be added as new models.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// AUTH & USERS
+// ============================================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  passwordHash  String?
+  image         String?
+  role          String   @default("USER") // USER | EDITOR | MODERATOR | ADMIN | SUPER_ADMIN
+  phone         String?
+  bio           String?
+  location      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  examAttempts   ExamAttempt[]
+  bookmarks      Bookmark[]
+  notifications  Notification[]
+  posts          BlogPost[]      @relation("PostAuthor")
+  reviews        Review[]
+  searchHistory  SearchHistory[]
+  accounts       Account[]
+  sessions       Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================
+// CORE / SHARED
+// ============================================================
+
+/// Module-agnostic categories. Each module can attach to a category via the categoryId FK.
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  icon        String?  // lucide icon name
+  color       String?  // tailwind color class e.g. "red" / "blue"
+  parentId    String?  // self-reference for subcategories
+  parent      Category? @relation("CategoryTree", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryTree")
+  module      String?  // which module this category belongs to: EXAM | COLLEGE | SCHOOL | etc.
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  exams         Exam[]
+  colleges      College[]
+  schools       School[]
+  scholarships  Scholarship[]
+  posts         BlogPost[]
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  posts BlogPost[]
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  entity    String   // COLLEGE | SCHOOL | SCHOLARSHIP | EXAM | POST | UNIVERSITY
+  entityId  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entity, entityId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO | SUCCESS | WARNING | EXAM_RESULT
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String?
+  query     String
+  module    String?  // which module the user searched in
+  results   Int?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  entity    String   // COLLEGE | SCHOOL | UNIVERSITY | SCHOLARSHIP
+  entityId  String
+  rating    Int      // 1..5
+  title     String?
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entity, entityId])
+}
+
+// ============================================================
+// MODULE: MOCK EXAMS (Education)
+// ============================================================
+
+model Exam {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  description  String
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
+  examType     String   // MOCK | PRACTICE | PREVIOUS_YEAR
+  durationMin  Int      // duration in minutes
+  totalMarks   Int
+  passingMarks Int?
+  difficulty   String   @default("MEDIUM") // EASY | MEDIUM | HARD
+  isPublished  Boolean  @default(true)
+  isFeatured   Boolean  @default(false)
+  tags         String?  // comma-separated tags
+  coverImage   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  questions  ExamQuestion[]
+  attempts   ExamAttempt[]
+}
+
+model ExamQuestion {
+  id          String   @id @default(cuid())
+  examId      String
+  exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  type        String   @default("MCQ") // MCQ | TRUE_FALSE | FILL_BLANK
+  question    String
+  options     String   // JSON string of options array
+  correctIdx  Int      // index of correct option (0-based)
+  explanation String?
+  marks       Int      @default(1)
+  order       Int      @default(0)
+}
+
+model ExamAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  examId      String
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  score       Int      @default(0)
+  totalMarks  Int
+  correctCount Int     @default(0)
+  wrongCount  Int      @default(0)
+  durationSec Int?
+  answers     String?  // JSON: [{questionId, selectedIdx, isCorrect}]
+  rank        Int?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exam        Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId, score])
+  @@index([userId])
+}
+
+// ============================================================
+// MODULE: COLLEGES (Education)
+// ============================================================
+
+model College {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  description    String
+  categoryId     String?
+  category       Category? @relation(fields: [categoryId], references: [id])
+  province       String?
+  district       String?
+  city           String?
+  address        String?
+  latitude       Float?
+  longitude      Float?
+  affiliation    String?  // TU, KU, PU, CTEVT, etc.
+  type           String   @default("PRIVATE") // PUBLIC | PRIVATE | COMMUNITY | INTERNATIONAL
+  establishedYear Int?
+  phone          String?
+  email          String?
+  website        String?
+  logo           String?
+  coverImage     String?
+  gallery        String?  // JSON: array of image URLs
+  programs       String?  // JSON: [{name, level, duration, fees, description}]
+  facilities     String?  // JSON: array of strings
+  admissionProcess String?
+  feesRange      String?
+  scholarshipsAvailable Boolean @default(false)
+  rating         Float    @default(0)
+  reviewCount    Int      @default(0)
+  isFeatured     Boolean  @default(false)
+  isVerified     Boolean  @default(false)
+  isPublished    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================================
+// MODULE: SCHOOLS (Education)
+// ============================================================
+
+model School {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  description    String
+  categoryId     String?
+  category       Category? @relation(fields: [categoryId], references: [id])
+  province       String?
+  district       String?
+  city           String?
+  address        String?
+  latitude       Float?
+  longitude      Float?
+  level          String?  // PRIMARY | LOWER_SECONDARY | SECONDARY | HIGHER_SECONDARY
+  type           String   @default("PRIVATE") // PUBLIC | PRIVATE | COMMUNITY
+  affiliation    String?  // NEB, CDC, etc.
+  establishedYear Int?
+  phone          String?
+  email          String?
+  website        String?
+  logo           String?
+  coverImage     String?
+  gallery        String?
+  facilities     String?  // JSON array
+  programs       String?  // JSON array of programs/classes offered
+  feesRange      String?
+  admissionProcess String?
+  rating         Float    @default(0)
+  reviewCount    Int      @default(0)
+  isFeatured     Boolean  @default(false)
+  isVerified     Boolean  @default(false)
+  isPublished    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================================
+// MODULE: UNIVERSITIES (Education)
+// ============================================================
+
+model University {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  description    String
+  establishedYear Int?
+  province       String?
+  city           String?
+  address        String?
+  phone          String?
+  email          String?
+  website        String?
+  logo           String?
+  coverImage     String?
+  type           String   @default("PUBLIC") // PUBLIC | PRIVATE
+  ranking        Int?
+  totalCampuses  Int      @default(0)
+  totalStudents  Int?
+  programs       String?  // JSON: [{faculty, level, name, duration}]
+  faculties      String?  // JSON: array of faculty names
+  admissionProcess String?
+  notices        String?  // JSON: [{title, date, link}]
+  results        String?  // JSON: [{title, date, link}]
+  rating         Float    @default(0)
+  reviewCount    Int      @default(0)
+  isFeatured     Boolean  @default(false)
+  isPublished    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================================
+// MODULE: SCHOLARSHIPS
+// ============================================================
+
+model Scholarship {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  description    String
+  provider       String?  // Government, University, NGO, etc.
+  providerUrl    String?
+  categoryId     String?
+  category       Category? @relation(fields: [categoryId], references: [id])
+  level          String?  // SCHOOL | +2 | BACHELORS | MASTERS | PHD | ANY
+  field          String?  // Engineering, Medicine, etc.
+  amount         String?  // e.g. "NPR 200,000/year" or "Full tuition"
+  eligibility    String?  // JSON array of criteria
+  deadline       DateTime?
+  applicationOpen DateTime?
+  applicationUrl String?
+  country        String   @default("Nepal")
+  province       String?
+  isFeatured     Boolean  @default(false)
+  isPublished    Boolean  @default(true)
+  coverImage     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================================
+// MODULE: BLOG / ARTICLES
+// ============================================================
+
+model BlogPost {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  excerpt      String?
+  content      String   // Markdown
+  coverImage   String?
+  categoryId   String?
+  category     Category? @relation(fields: [categoryId], references: [id])
+  authorId     String?
+  author       User?    @relation("PostAuthor", fields: [authorId], references: [id])
+  tags         Tag[]
+  status       String   @default("PUBLISHED") // DRAFT | PUBLISHED | ARCHIVED
+  featured     Boolean  @default(false)
+  views        Int      @default(0)
+  readTimeMin  Int      @default(5)
+  metaTitle    String?
+  metaDescription String?
+  publishedAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([slug])
+}
+
+// ============================================================
+// TRENDING SEARCHES (managed by admin)
+// ============================================================
+
+model TrendingSearch {
+  id        String   @id @default(cuid())
+  query     String   @unique
+  count     Int      @default(0)
+  module    String?  // EXAM | COLLEGE | etc.
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
