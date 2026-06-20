@@ -9,6 +9,7 @@ import { FeaturedExams } from "@/components/khojney/featured-exams";
 import { FeaturedScholarships } from "@/components/khojney/featured-scholarships";
 import { RecentPosts } from "@/components/khojney/recent-posts";
 import { StatsRow } from "@/components/khojney/stats-row";
+import { FeaturedBanks, FeaturedJobs, FeaturedGovtServices } from "@/components/khojney/featured-phase2";
 import { getSession } from "@/lib/auth-server";
 
 export const revalidate = 3600;
@@ -16,7 +17,7 @@ export const revalidate = 3600;
 export default async function HomePage() {
   const user = await getSession();
 
-  const [trending, featuredColleges, featuredExams, featuredScholarships, recentPosts, categories] =
+  const [trending, featuredColleges, featuredExams, featuredScholarships, recentPosts, categories, featuredBanks, featuredJobs, featuredGovtServices] =
     await Promise.all([
       db.trendingSearch.findMany({
         where: { isActive: true },
@@ -49,6 +50,21 @@ export default async function HomePage() {
         where: { module: { in: ["EXAM", "COLLEGE", "SCHOOL"] } },
         orderBy: [{ module: "asc" }, { order: "asc" }],
       }),
+      db.bank.findMany({
+        where: { isFeatured: true, isPublished: true },
+        orderBy: { rating: "desc" },
+        take: 4,
+      }),
+      db.job.findMany({
+        where: { isFeatured: true, isPublished: true },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+      }),
+      db.governmentService.findMany({
+        where: { isFeatured: true, isPublished: true },
+        orderBy: { views: "desc" },
+        take: 4,
+      }),
     ]);
 
   const stats = {
@@ -58,6 +74,9 @@ export default async function HomePage() {
     exams: await db.exam.count({ where: { isPublished: true } }),
     scholarships: await db.scholarship.count(),
     posts: await db.blogPost.count({ where: { status: "PUBLISHED" } }),
+    banks: await db.bank.count(),
+    jobs: await db.job.count({ where: { isPublished: true } }),
+    govtServices: await db.governmentService.count({ where: { isPublished: true } }),
   };
 
   return (
@@ -68,6 +87,9 @@ export default async function HomePage() {
       <FeaturedExams exams={featuredExams} />
       <FeaturedColleges colleges={featuredColleges} />
       <FeaturedScholarships scholarships={featuredScholarships} />
+      <FeaturedBanks banks={featuredBanks} />
+      <FeaturedJobs jobs={featuredJobs} />
+      <FeaturedGovtServices services={featuredGovtServices} />
       <RecentPosts posts={recentPosts} />
       <TrendingSearches trending={trending} />
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { demoLogin } from "@/lib/auth-server";
-import { requireAdmin } from "../../../../../../_lib/require-admin";
 
 interface RegisterPayload {
   name?: string;

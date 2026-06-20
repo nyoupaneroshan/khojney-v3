@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, Search, X, User, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Menu, Search, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -22,6 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/khojney/theme-toggle";
+import { GlobalSearchLauncher } from "@/components/khojney/global-search-launcher";
 import { cn } from "@/lib/utils";
 
 interface NavLink {
@@ -43,10 +44,28 @@ const NAV_LINKS: NavLink[] = [
       { label: "Blog", href: "/blog", description: "Exam guides & career tips" },
     ],
   },
-  { label: "Finance", href: "/blog?category=blog-guides" },
-  { label: "Careers", href: "/blog?category=blog-career" },
-  { label: "Government", href: "/exams?category=loksewa" },
-  { label: "Tools", href: "/exams" },
+  {
+    label: "Finance",
+    href: "/banks",
+    children: [
+      { label: "Banks of Nepal", href: "/banks", description: "Compare interest rates & services" },
+      { label: "Govt Services", href: "/government?category=TAX", description: "PAN, VAT, tax filing" },
+    ],
+  },
+  { label: "Careers", href: "/jobs" },
+  {
+    label: "Government",
+    href: "/government",
+    children: [
+      { label: "All Services", href: "/government", description: "Citizenship, passport, PAN, license" },
+      { label: "Citizenship", href: "/government?category=CITIZENSHIP", description: "Nagarikta application" },
+      { label: "Passport", href: "/government?category=PASSPORT", description: "MRP / e-Passport" },
+      { label: "Driving License", href: "/government?category=LICENSE", description: "Apply & renew" },
+      { label: "PAN / VAT", href: "/government?category=PAN", description: "Tax registration" },
+      { label: "Loksewa Exams", href: "/exams?category=loksewa", description: "Public Service Commission" },
+    ],
+  },
+  { label: "Compare", href: "/compare" },
   { label: "Directory", href: "/colleges" },
 ];
 
@@ -57,7 +76,6 @@ interface HeaderProps {
 export function Header({ user }: HeaderProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -85,7 +103,7 @@ export function Header({ user }: HeaderProps) {
             </SheetHeader>
             <nav className="mt-6 flex flex-col gap-1">
               {NAV_LINKS.map((link) => (
-                <div key={link.href} className="flex flex-col">
+                <div key={`${link.label}-${link.href}`} className="flex flex-col">
                   <Link
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
@@ -122,7 +140,7 @@ export function Header({ user }: HeaderProps) {
         <nav className="hidden md:flex items-center gap-1">
           {NAV_LINKS.map((link) =>
             link.children ? (
-              <DropdownMenu key={link.href}>
+              <DropdownMenu key={`${link.label}-${link.href}`}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
@@ -151,7 +169,7 @@ export function Header({ user }: HeaderProps) {
               </DropdownMenu>
             ) : (
               <Button
-                key={link.href}
+                key={`${link.label}-${link.href}`}
                 variant="ghost"
                 size="sm"
                 asChild
@@ -166,24 +184,12 @@ export function Header({ user }: HeaderProps) {
           )}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <form
-            action="/search"
-            className="hidden lg:flex items-center"
-          >
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                name="q"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Khojney..."
-                className="w-56 pl-9 pr-3 h-9"
-                aria-label="Search"
-              />
-            </div>
-          </form>
+        <div className="flex items-center gap-1.5">
+          <GlobalSearchLauncher />
+
+          <div className="hidden sm:block">
+            <ThemeToggle />
+          </div>
 
           {user ? (
             <DropdownMenu>
@@ -218,7 +224,16 @@ export function Header({ user }: HeaderProps) {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/api/auth/logout"><LogOut className="mr-2 h-4 w-4" /> Logout</Link>
+                  <button
+                    type="button"
+                    className="w-full cursor-pointer"
+                    onClick={async () => {
+                      await fetch("/api/auth/logout", { method: "POST" });
+                      window.location.href = "/";
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" /> Logout
+                  </button>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

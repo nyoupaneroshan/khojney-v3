@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { CollegeForm, parseCollegeInitial } from "@/components/admin/college-form";
+import { CollegeForm } from "@/components/admin/college-form";
 import { AdminFormHeader, BackToAdminLink } from "@/components/admin/admin-list";
 
 export const dynamic = "force-dynamic";

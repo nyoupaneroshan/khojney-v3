@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { USER_ROLES } from "@/lib/constants";
-import { requireAdmin } from "../../../../../../../_lib/require-admin";
+import { requireAdmin } from "@/app/api/admin/_lib/require-admin";
 
 export const dynamic = "force-dynamic";
 

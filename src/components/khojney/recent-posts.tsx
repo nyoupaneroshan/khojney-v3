@@ -44,7 +44,6 @@ export function RecentPosts({ posts }: { posts: RecentPost[] }) {
           <Card className="card-hover overflow-hidden flex flex-col">
             {featured.coverImage && (
               <div className="aspect-video overflow-hidden bg-muted">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={featured.coverImage}
                   alt={featured.title}
@@ -79,7 +78,6 @@ export function RecentPosts({ posts }: { posts: RecentPost[] }) {
                 <div className="flex gap-4 p-4">
                   {p.coverImage && (
                     <div className="hidden sm:block w-32 h-24 shrink-0 overflow-hidden rounded-md bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={p.coverImage} alt={p.title} className="w-full h-full object-cover" />
                     </div>
                   )}

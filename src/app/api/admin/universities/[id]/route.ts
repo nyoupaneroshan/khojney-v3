@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireAdmin } from "../../../../../../../_lib/require-admin";
+import { requireAdmin } from "@/app/api/admin/_lib/require-admin";
 import { slugify, stringifyJson } from "@/lib/admin-utils";
 
 export const dynamic = "force-dynamic";

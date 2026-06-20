@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
-import { requireAdmin } from "../../../../../_lib/require-admin";
 
 interface SearchHit {
   type: string;
@@ -21,6 +20,9 @@ const MODULE_LABELS: Record<string, string> = {
   UNIVERSITY: "University",
   SCHOLARSHIP: "Scholarship",
   BLOG: "Article",
+  BANK: "Bank",
+  JOB: "Job",
+  GOVERNMENT_SERVICE: "Government Service",
 };
 
 /**
@@ -74,6 +76,15 @@ export async function GET(req: NextRequest) {
   }
   if (wantsAll || moduleParam === "BLOG") {
     tasks.push(searchPosts(q));
+  }
+  if (wantsAll || moduleParam === "BANK") {
+    tasks.push(searchBanks(q));
+  }
+  if (wantsAll || moduleParam === "JOB") {
+    tasks.push(searchJobs(q));
+  }
+  if (wantsAll || moduleParam === "GOVERNMENT_SERVICE") {
+    tasks.push(searchGovernmentServices(q));
   }
 
   const allResults = (await Promise.all(tasks)).flat();
@@ -299,6 +310,104 @@ async function searchPosts(q: string): Promise<SearchHit[]> {
       author: p.author?.name ?? null,
       readTime: `${p.readTimeMin} min read`,
       publishedAt: p.publishedAt.toISOString().split("T")[0],
+    },
+  }));
+}
+
+async function searchBanks(q: string): Promise<SearchHit[]> {
+  const rows = await db.bank.findMany({
+    where: {
+      isPublished: true,
+      OR: [
+        { name: { contains: q } },
+        { shortName: { contains: q } },
+        { description: { contains: q } },
+        { headquarters: { contains: q } },
+      ],
+    },
+    take: 25,
+  });
+  return rows.map((b) => ({
+    type: "BANK",
+    id: b.id,
+    slug: b.slug,
+    title: b.name,
+    description: b.description,
+    url: `/banks/${b.slug}`,
+    image: b.logo ?? null,
+    meta: {
+      shortName: b.shortName,
+      type: b.type,
+      headquarters: b.headquarters,
+      savingsRateMax: b.savingsRateMax,
+      branchCount: b.branchCount,
+    },
+  }));
+}
+
+async function searchJobs(q: string): Promise<SearchHit[]> {
+  const rows = await db.job.findMany({
+    where: {
+      isPublished: true,
+      OR: [
+        { title: { contains: q } },
+        { description: { contains: q } },
+        { company: { contains: q } },
+        { location: { contains: q } },
+        { category: { contains: q } },
+      ],
+    },
+    take: 25,
+  });
+  return rows.map((j) => ({
+    type: "JOB",
+    id: j.id,
+    slug: j.slug,
+    title: j.title,
+    description: j.description,
+    url: `/jobs/${j.slug}`,
+    image: j.companyLogo ?? null,
+    meta: {
+      company: j.company,
+      location: j.location,
+      jobType: j.jobType,
+      category: j.category,
+      experienceLevel: j.experienceLevel,
+      salaryMax: j.salaryMax,
+      deadline: j.deadline ? j.deadline.toISOString().split("T")[0] : null,
+    },
+  }));
+}
+
+async function searchGovernmentServices(q: string): Promise<SearchHit[]> {
+  const rows = await db.governmentService.findMany({
+    where: {
+      isPublished: true,
+      OR: [
+        { title: { contains: q } },
+        { description: { contains: q } },
+        { ministry: { contains: q } },
+        { department: { contains: q } },
+        { category: { contains: q } },
+      ],
+    },
+    take: 25,
+  });
+  return rows.map((g) => ({
+    type: "GOVERNMENT_SERVICE",
+    id: g.id,
+    slug: g.slug,
+    title: g.title,
+    description: g.description,
+    url: `/government/${g.slug}`,
+    image: null,
+    meta: {
+      category: g.category,
+      ministry: g.ministry,
+      department: g.department,
+      office: g.office,
+      processingTime: g.processingTime,
+      applicationFee: g.applicationFee,
     },
   }));
 }

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { ScholarshipForm, parseScholarshipInitial } from "@/components/admin/scholarship-form";
+import { ScholarshipForm } from "@/components/admin/scholarship-form";
+import { parseScholarshipInitial } from "@/lib/admin-parsers";
 import { AdminFormHeader, BackToAdminLink } from "@/components/admin/admin-list";
 
 export const dynamic = "force-dynamic";

@@ -74,20 +74,39 @@ function AddItemInput({
   onAdd: (value: string) => void;
   placeholder: string;
 }) {
+  const handleAdd = (input: HTMLInputElement) => {
+    const v = input.value.trim();
+    if (!v) return;
+    onAdd(v);
+    input.value = "";
+  };
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        const input = e.currentTarget.elements.namedItem("item") as HTMLInputElement;
-        onAdd(input.value);
-        input.value = "";
-      }}
-      className="flex gap-2"
-    >
-      <Input name="item" placeholder={placeholder} className="flex-1" />
-      <Button type="submit" variant="secondary" size="sm">
+    <div className="flex gap-2">
+      <Input
+        name="item"
+        placeholder={placeholder}
+        className="flex-1"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            handleAdd(e.currentTarget);
+          }
+        }}
+      />
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={(e) => {
+          const input = e.currentTarget.parentElement?.querySelector(
+            'input[name="item"]',
+          ) as HTMLInputElement | null;
+          if (input) handleAdd(input);
+        }}
+      >
         <Plus className="h-4 w-4" /> Add
       </Button>
-    </form>
+    </div>
   );
 }

@@ -34,6 +34,9 @@ const MODULE_TABS = [
   { key: "SCHOOL", label: "Schools" },
   { key: "UNIVERSITY", label: "Universities" },
   { key: "SCHOLARSHIP", label: "Scholarships" },
+  { key: "BANK", label: "Banks" },
+  { key: "JOB", label: "Jobs" },
+  { key: "GOVERNMENT_SERVICE", label: "Govt Services" },
   { key: "BLOG", label: "Blog" },
 ] as const;
 

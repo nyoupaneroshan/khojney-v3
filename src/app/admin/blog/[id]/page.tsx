@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { BlogPostForm, parseBlogPostInitial } from "@/components/admin/blog-post-form";
+import { BlogPostForm } from "@/components/admin/blog-post-form";
+import { parseBlogPostInitial } from "@/lib/admin-parsers";
 import { AdminFormHeader, BackToAdminLink } from "@/components/admin/admin-list";
 
 export const dynamic = "force-dynamic";

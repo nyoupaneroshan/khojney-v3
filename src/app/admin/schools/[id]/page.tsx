@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { SchoolForm, parseSchoolInitial } from "@/components/admin/school-form";
+import { SchoolForm } from "@/components/admin/school-form";
+import { parseSchoolInitial } from "@/lib/admin-parsers";
 import { AdminFormHeader, BackToAdminLink } from "@/components/admin/admin-list";
 
 export const dynamic = "force-dynamic";

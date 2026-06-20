@@ -10,6 +10,9 @@ export const MODULES = [
   "UNIVERSITY",
   "SCHOLARSHIP",
   "BLOG",
+  "BANK",
+  "JOB",
+  "GOVERNMENT_SERVICE",
 ] as const;
 export type ModuleKey = (typeof MODULES)[number];
 
@@ -20,6 +23,9 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   UNIVERSITY: "Universities",
   SCHOLARSHIP: "Scholarships",
   BLOG: "Blog",
+  BANK: "Banks",
+  JOB: "Jobs",
+  GOVERNMENT_SERVICE: "Government Services",
 };
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
@@ -29,6 +35,9 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   UNIVERSITY: "/universities",
   SCHOLARSHIP: "/scholarships",
   BLOG: "/blog",
+  BANK: "/banks",
+  JOB: "/jobs",
+  GOVERNMENT_SERVICE: "/government",
 };
 
 export const MODULE_ENTITIES: Record<ModuleKey, string> = {
@@ -38,6 +47,9 @@ export const MODULE_ENTITIES: Record<ModuleKey, string> = {
   UNIVERSITY: "University",
   SCHOLARSHIP: "Scholarship",
   BLOG: "BlogPost",
+  BANK: "Bank",
+  JOB: "Job",
+  GOVERNMENT_SERVICE: "GovernmentService",
 };
 
 export const NEPAL_PROVINCES = [
@@ -105,6 +117,9 @@ export const FEATURED_CATEGORIES = [
   { name: "Schools", icon: "School", color: "teal", href: "/schools" },
   { name: "Universities", icon: "University", color: "cyan", href: "/universities" },
   { name: "Scholarships", icon: "Award", color: "emerald", href: "/scholarships" },
+  { name: "Banks", icon: "Landmark", color: "blue", href: "/banks" },
+  { name: "Jobs", icon: "Briefcase", color: "amber", href: "/jobs" },
+  { name: "Govt Services", icon: "Building", color: "purple", href: "/government" },
   { name: "Blog", icon: "Newspaper", color: "orange", href: "/blog" },
   { name: "Teacher License", icon: "Users", color: "pink", href: "/exams?category=teacher-license" },
 ] as const;

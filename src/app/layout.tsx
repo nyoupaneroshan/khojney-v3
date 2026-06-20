@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AIAssistant } from "@/components/khojney/ai-assistant";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -84,6 +85,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
+        <AIAssistant />
         <Toaster />
         <SonnerToaster richColors position="top-right" />
       </body>

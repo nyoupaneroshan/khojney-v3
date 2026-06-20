@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
 
-const ENTITY_TABLE: Record<string, "College" | "School" | "University"> = {
+const ENTITY_TABLE: Record<string, "College" | "School" | "University" | "Bank"> = {
   COLLEGE: "College",
   SCHOOL: "School",
   UNIVERSITY: "University",
+  BANK: "Bank",
 };
 
 export async function POST(req: NextRequest) {

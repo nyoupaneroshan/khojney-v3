@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { UniversityForm, parseUniversityInitial } from "@/components/admin/university-form";
+import { UniversityForm } from "@/components/admin/university-form";
+import { parseUniversityInitial } from "@/lib/admin-parsers";
 import { AdminFormHeader, BackToAdminLink } from "@/components/admin/admin-list";
 
 export const dynamic = "force-dynamic";

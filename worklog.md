@@ -135,3 +135,49 @@ Stage Summary:
 - Auth works with cookies; demo login supported for admin and user.
 - SEO: sitemap.xml, robots.txt, JSON-LD structured data on detail pages, OG meta tags.
 
+
+---
+Task ID: 6 (Phase 2 — Banks, Jobs, Government Services)
+Agent: Main (Claude)
+Task: Build Phase 2 modules, fix admin edit bugs, restore lost Phase 1 polish
+
+Work Log:
+- Investigated admin/schools edit error — found ALL admin APIs had broken `_lib/require-admin` import path (relative `../../../../../../_lib/require-admin` doesn't resolve)
+- Fixed all 27 API files to use absolute `@/app/api/admin/_lib/require-admin` import
+- Removed unused requireAdmin imports from non-admin routes (search, exam-attempts, root, auth)
+- Found admin-parsers.ts was missing — recreated it with all 9 parser functions (Phase 1 + Phase 2: parseCollegeInitial, parseSchoolInitial, parseUniversityInitial, parseScholarshipInitial, parseExamInitial, parseBlogPostInitial, parseBankInitial, parseJobInitial, parseGovernmentServiceInitial)
+- Fixed all 6 admin edit pages to import parsers from `@/lib/admin-parsers` (server-safe) instead of from client form components
+- Added Phase 2 Prisma models: Bank, Job, GovernmentService (pushed to DB)
+- Added Phase 2 seed script with realistic Nepal data: 8 banks (Nabil, NIC Asia, Global IME, Everest, Prabhu, ADBL, RBB, NBL), 8 jobs (F1Soft, TUTH, ECS, Daraz, Nabil, CA firm, school, remote React), 8 govt services (Citizenship, Passport, PAN, License, VAT, Land, Vehicle, Marriage)
+- Registered Phase 2 modules in constants.ts (MODULES, MODULE_LABELS, MODULE_PATHS, MODULE_ENTITIES, FEATURED_CATEGORIES)
+- Built Phase 2 modules via parallel subagents:
+  - Banks: public list+detail pages, admin CRUD, API routes (8 banks seeded)
+  - Jobs: public list+detail pages, admin CRUD, API routes (8 jobs seeded)
+  - Government Services: public list+detail pages, admin CRUD, API routes (8 services seeded)
+- Updated search API to include Bank, Job, GovernmentService — now searches across all 9 modules
+- Updated search page tabs to show all 9 modules
+- Updated homepage to show Featured Banks, Featured Jobs, Featured Government Services sections
+- Updated StatsRow to show 9 stats (added Banks, Jobs, Govt Services)
+- Updated header navigation: Education (dropdown), Finance (dropdown with Banks), Careers, Government (dropdown with Citizenship/Passport/License/PAN/Loksewa), Compare, Directory
+- Updated admin sidebar: added Banks, Jobs, Government Services as active items; moved Hospitals/Mutual Funds/NEPSE/Insurance to "Coming soon"
+- Updated admin route titles + singular forms for new modules
+- Updated footer with Finance & Govt, Careers & More, Company sections
+- Updated sitemap to include all Phase 2 routes + dynamic bank/job/government URLs
+- Rebuilt lost Phase 1 enhancements: /about, /privacy, /terms, /contact, /compare pages; not-found.tsx (404); global-error.tsx; ThemeToggle; GlobalSearchLauncher (Cmd+K); AIAssistant (z-ai-web-dev-sdk); contact-form.tsx; compare-tool.tsx
+- Fixed JsonListEditor nested form bug (AddItemInput had <form> inside parent <form>) — refactored to use <div> + onKeyDown Enter handler
+- Fixed SlugField infinite re-render bug (onChange in useEffect deps) — added value comparison guard, removed onChange from deps
+- Fixed logout link bug (was GET, now POST + fallback GET redirect)
+- Fixed duplicate React key warning in header (Education + Tools both → /exams) — changed Tools to Compare, added label-prefix to all keys
+
+Stage Summary:
+- Lint: 0 errors, 0 warnings (completely clean)
+- All routes verified: 25/25 public routes return 200, 307 for protected, 404 for missing
+- All 13 admin list pages return 200 (authenticated)
+- All 11 admin create pages return 200
+- All 9 admin edit pages return 200 with pre-filled form data (verified via Agent Browser)
+- All 14 admin APIs return 200 (authenticated)
+- Universal search works across all 9 modules (tested: "nabil"→BANK+JOB, "passport"→GOVERNMENT_SERVICE, "engineering"→6 types, "react"→JOB)
+- AI assistant returns intelligent Nepal-specific responses
+- Homepage shows 6 featured sections (Exams, Colleges, Scholarships, Banks, Jobs, Govt Services) + Blog + Trending
+- Demo credentials: admin@khojney.com / user@khojney.com (any password)
+

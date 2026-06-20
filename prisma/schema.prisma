@@ -407,3 +407,96 @@ model TrendingSearch {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ============================================================
+// PHASE 2 MODULES
+// ============================================================
+
+// ─── MODULE: BANKS (Finance) ─────────────────────────────────
+model Bank {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  name                String
+  shortName           String
+  description         String
+  type                String   @default("COMMERCIAL") // COMMERCIAL | DEVELOPMENT | FINANCE | MICROFINANCE
+  establishedYear     Int?
+  headquarters         String?
+  website             String?
+  phone               String?
+  email               String?
+  logo                String?
+  swiftCode           String?
+  savingsRateMin      Float?
+  savingsRateMax      Float?
+  fixedDepositRateMin Float?
+  fixedDepositRateMax Float?
+  branchCount         Int?
+  atmCount            Int?
+  mobileBanking       Boolean  @default(false)
+  internetBanking     Boolean  @default(false)
+  cards               String?  // JSON array of card types
+  loans               String?  // JSON array of loan types
+  rating              Float    @default(0)
+  reviewCount         Int      @default(0)
+  isFeatured          Boolean  @default(false)
+  isPublished         Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ─── MODULE: JOBS (Careers) ──────────────────────────────────
+model Job {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  title           String
+  description     String
+  company         String
+  companyLogo     String?
+  location        String?
+  jobType         String    @default("FULL_TIME") // FULL_TIME | PART_TIME | CONTRACT | INTERNSHIP | REMOTE
+  category        String?   // IT | FINANCE | MARKETING | ENGINEERING | etc.
+  experienceLevel String    @default("ENTRY") // ENTRY | MID | SENIOR | LEAD
+  salaryMin       Int?
+  salaryMax       Int?
+  salaryCurrency  String    @default("NPR")
+  applicationUrl  String?
+  applicationEmail String?
+  deadline        DateTime?
+  skills          String?   // JSON array of skills
+  qualifications  String?   // JSON array of qualifications
+  views           Int       @default(0)
+  isFeatured      Boolean   @default(false)
+  isPublished     Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([jobType, isPublished])
+  @@index([category, isPublished])
+}
+
+// ─── MODULE: GOVERNMENT SERVICES (Government) ────────────────
+model GovernmentService {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  title             String
+  description       String
+  category          String   @default("CITIZENSHIP") // CITIZENSHIP | PASSPORT | PAN | LICENSE | TAX | LAND | VEHICLE | OTHER
+  ministry          String?
+  department        String?
+  office            String?
+  applicationUrl    String?
+  applicationFee    String?
+  processingTime    String?
+  requiredDocuments String?  // JSON array of documents
+  steps             String?  // JSON array of process steps
+  contactPhone      String?
+  contactEmail      String?
+  views             Int      @default(0)
+  isFeatured        Boolean  @default(false)
+  isPublished       Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category, isPublished])
+}

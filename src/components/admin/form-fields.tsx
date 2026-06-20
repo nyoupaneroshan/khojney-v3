@@ -21,9 +21,12 @@ export function SlugField({
 
   useEffect(() => {
     if (!touched) {
-      onChange(slugify(titleValue));
+      const newSlug = slugify(titleValue);
+      if (newSlug !== value) {
+        onChange(newSlug);
+      }
     }
-  }, [titleValue, touched, onChange]);
+  }, [titleValue, touched]);
 
   return (
     <div className="space-y-2">

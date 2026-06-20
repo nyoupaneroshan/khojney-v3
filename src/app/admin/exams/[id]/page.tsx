@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { ExamForm, parseExamInitial } from "@/components/admin/exam-form";
+import { ExamForm } from "@/components/admin/exam-form";
 import { ExamQuestionsEditor } from "@/components/admin/exam-questions-editor";
+import { parseExamInitial } from "@/lib/admin-parsers";
 import { AdminFormHeader, BackToAdminLink } from "@/components/admin/admin-list";
 
 export const dynamic = "force-dynamic";

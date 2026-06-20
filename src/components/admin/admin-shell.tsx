@@ -15,8 +15,10 @@ import {
   TrendingUp,
   Users,
   Building2,
+  Landmark,
   Briefcase,
   HeartPulse,
+  ShieldCheck,
   ChevronDown,
   LogOut,
   ExternalLink,
@@ -66,6 +68,9 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Universities", href: "/admin/universities", icon: UniversityIcon },
   { label: "Scholarships", href: "/admin/scholarships", icon: Award },
   { label: "Exams", href: "/admin/exams", icon: FileText },
+  { label: "Banks", href: "/admin/banks", icon: Landmark },
+  { label: "Jobs", href: "/admin/jobs", icon: Briefcase },
+  { label: "Government Services", href: "/admin/government", icon: Building2 },
   { label: "Blog Posts", href: "/admin/blog", icon: Newspaper },
   { label: "Categories", href: "/admin/categories", icon: FolderTree },
   { label: "Trending Searches", href: "/admin/trending", icon: TrendingUp },
@@ -73,9 +78,10 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 const COMING_SOON: NavItem[] = [
-  { label: "Banks", href: "#", icon: Building2, disabled: true },
-  { label: "Jobs", href: "#", icon: Briefcase, disabled: true },
   { label: "Hospitals", href: "#", icon: HeartPulse, disabled: true },
+  { label: "Mutual Funds", href: "#", icon: TrendingUp, disabled: true },
+  { label: "NEPSE / Share Market", href: "#", icon: TrendingUp, disabled: true },
+  { label: "Insurance", href: "#", icon: ShieldCheck, disabled: true },
 ];
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -85,10 +91,28 @@ const ROUTE_TITLES: Record<string, string> = {
   "/admin/universities": "Universities",
   "/admin/scholarships": "Scholarships",
   "/admin/exams": "Exams",
+  "/admin/banks": "Banks",
+  "/admin/jobs": "Jobs",
+  "/admin/government": "Government Services",
   "/admin/blog": "Blog Posts",
   "/admin/categories": "Categories",
   "/admin/trending": "Trending Searches",
   "/admin/users": "Users",
+};
+
+const SINGULAR: Record<string, string> = {
+  Colleges: "College",
+  Schools: "School",
+  Universities: "University",
+  Scholarships: "Scholarship",
+  Exams: "Exam",
+  Banks: "Bank",
+  Jobs: "Job",
+  "Government Services": "Government Service",
+  "Blog Posts": "Blog Post",
+  Categories: "Category",
+  "Trending Searches": "Trending Search",
+  Users: "User",
 };
 
 function getRouteTitle(pathname: string): string {
@@ -98,8 +122,9 @@ function getRouteTitle(pathname: string): string {
     .sort((a, b) => b.length - a.length)[0];
   if (matched) {
     const rest = pathname.slice(matched.length);
-    if (rest === "/new") return `New ${ROUTE_TITLES[matched].replace(/s$/, "")}`;
-    if (/^\/[^/]+$/.test(rest)) return `Edit ${ROUTE_TITLES[matched].replace(/s$/, "")}`;
+    const singular = SINGULAR[ROUTE_TITLES[matched]] ?? ROUTE_TITLES[matched].replace(/s$/, "");
+    if (rest === "/new") return `New ${singular}`;
+    if (/^\/[^/]+$/.test(rest)) return `Edit ${singular}`;
     return ROUTE_TITLES[matched];
   }
   return "Admin";
