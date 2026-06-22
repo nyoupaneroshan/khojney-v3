@@ -60,6 +60,7 @@ export function Footer() {
               <li><Link href="/jobs" className="text-muted-foreground hover:text-primary">Jobs in Nepal</Link></li>
               <li><Link href="/blog" className="text-muted-foreground hover:text-primary">Blog</Link></li>
               <li><Link href="/compare" className="text-muted-foreground hover:text-primary">Compare Colleges</Link></li>
+              <li><Link href="/in" className="text-muted-foreground hover:text-primary">Browse by Location</Link></li>
               <li><Link href="/search" className="text-muted-foreground hover:text-primary">Search</Link></li>
               <li><Link href="/dashboard" className="text-muted-foreground hover:text-primary">Dashboard</Link></li>
             </ul>

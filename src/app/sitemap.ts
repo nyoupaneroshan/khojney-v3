@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
+import { NEPAL_PROVINCES } from "@/lib/constants";
 
 export const revalidate = 3600;
 
@@ -45,6 +46,14 @@ export default async function sitemap(): MetadataRoute.Sitemap {
     ...jobs.map((j) => ({ url: `${base}/jobs/${j.slug}`, lastModified: j.updatedAt, changeFrequency: "weekly" as const, priority: 0.8 })),
     ...govtServices.map((g) => ({ url: `${base}/government/${g.slug}`, lastModified: g.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
     ...posts.map((p) => ({ url: `${base}/blog/${p.slug}`, lastModified: p.publishedAt, changeFrequency: "monthly" as const, priority: 0.6 })),
+    // Location pages (programmatic SEO)
+    { url: `${base}/in`, lastModified: new Date(), changeFrequency: "weekly" as const, priority: 0.8 },
+    ...NEPAL_PROVINCES.map((p) => ({
+      url: `${base}/in/${p.toLowerCase().replace(/\s+/g, "-")}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    })),
   ];
 
   return [...staticRoutes, ...dynamic];
