@@ -60,8 +60,11 @@ export default async function ExamsListPage({
     Math.max(1, parseInt(sp.pageSize ?? String(PAGE_SIZE), 10) || PAGE_SIZE),
   );
 
-  // Build where clause
-  const where: Record<string, unknown> = { isPublished: true };
+  // Build where clause — show parent exams + standalone exams (no parent)
+  const where: Record<string, unknown> = {
+    isPublished: true,
+    parentId: null, // Only show top-level exams (parent or standalone)
+  };
   if (q) {
     where.OR = [
       { title: { contains: q } },
@@ -96,7 +99,7 @@ export default async function ExamsListPage({
       take: pageSize,
       include: {
         category: true,
-        _count: { select: { questions: true, attempts: true } },
+        _count: { select: { questions: true, attempts: true, children: true } },
       },
     }),
     db.category.findMany({

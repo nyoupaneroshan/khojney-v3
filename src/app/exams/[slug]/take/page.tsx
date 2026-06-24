@@ -45,6 +45,8 @@ export default async function ExamTakePage({
     passingMarks: exam.passingMarks,
     difficulty: exam.difficulty,
     examType: exam.examType,
+    shuffleQuestions: exam.shuffleQuestions,
+    shuffleOptions: exam.shuffleOptions,
     questions: exam.questions.map((q) => {
       let options: string[] = [];
       try {

@@ -68,6 +68,8 @@ export interface ExamRunnerExam {
   passingMarks: number | null;
   difficulty: string;
   examType: string;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
   questions: ExamRunnerQuestion[];
 }
 
@@ -104,6 +106,48 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
 }
 
+// Fisher-Yates shuffle (returns a new array, doesn't mutate input)
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Process questions: optionally shuffle order + shuffle options within each question.
+// Returns questions with a `displayOptions` array and a `displayToOriginal` mapping
+// so that when the user picks displayIdx, we can store the ORIGINAL option index
+// (which the server uses to check against correctIdx).
+interface ProcessedQuestion extends ExamRunnerQuestion {
+  displayOptions: string[];
+  displayToOriginal: number[]; // displayToOriginal[displayIdx] = originalIdx
+}
+
+function processQuestions(
+  questions: ExamRunnerQuestion[],
+  shuffleQs: boolean,
+  shuffleOpts: boolean,
+): ProcessedQuestion[] {
+  let qs = questions;
+  if (shuffleQs && qs.length > 1) {
+    qs = shuffle(qs);
+  }
+  return qs.map((q) => {
+    const originalIndices = q.options.map((_, i) => i);
+    const shuffledIndices = shuffleOpts && originalIndices.length > 1
+      ? shuffle(originalIndices)
+      : originalIndices;
+    const displayOptions = shuffledIndices.map((i) => q.options[i]);
+    return {
+      ...q,
+      displayOptions,
+      displayToOriginal: shuffledIndices,
+    };
+  });
+}
+
 export function ExamRunner({ exam, userId }: ExamRunnerProps) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("loading");
@@ -116,7 +160,19 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const submittedRef = useRef(false);
 
-  const totalQuestions = exam.questions.length;
+  // Shuffle questions + options ONCE per mount (per attempt).
+  // This runs before the component renders, so every attempt sees a different order.
+  const processedQuestions = useMemo(
+    () =>
+      processQuestions(
+        exam.questions,
+        exam.shuffleQuestions,
+        exam.shuffleOptions,
+      ),
+    [], // intentionally empty — shuffle only once per mount
+  );
+
+  const totalQuestions = processedQuestions.length;
 
   // Tag user id for any client-side analytics / debugging
   useEffect(() => {
@@ -214,8 +270,13 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
     [attemptId, answers],
   );
 
-  const selectOption = (questionId: string, optionIdx: number) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: optionIdx }));
+  // When user selects a DISPLAYED option index, convert to ORIGINAL index
+  // so the server can check against the original correctIdx.
+  const selectOption = (questionId: string, displayIdx: number) => {
+    const q = processedQuestions.find((pq) => pq.id === questionId);
+    if (!q) return;
+    const originalIdx = q.displayToOriginal[displayIdx];
+    setAnswers((prev) => ({ ...prev, [questionId]: originalIdx }));
   };
 
   const clearAnswer = (questionId: string) => {
@@ -226,7 +287,7 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
     });
   };
 
-  const currentQuestion = exam.questions[currentIdx];
+  const currentQuestion = processedQuestions[currentIdx];
   const answeredCount = useMemo(
     () => Object.keys(answers).length,
     [answers],
@@ -327,6 +388,10 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
   // -------- Active exam state --------
   const lowTime = timeLeft <= 60;
   const selectedOption = currentQuestion ? answers[currentQuestion.id] ?? null : null;
+  // Convert the stored original index back to display index for highlighting
+  const selectedDisplayIdx = selectedOption !== null && currentQuestion
+    ? currentQuestion.displayToOriginal.indexOf(selectedOption)
+    : null;
 
   return (
     <div className="bg-muted/30 min-h-[calc(100vh-4rem)]">
@@ -403,8 +468,8 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {currentQuestion.options.map((opt, idx) => {
-                  const isSelected = selectedOption === idx;
+                {currentQuestion.displayOptions.map((opt, idx) => {
+                  const isSelected = selectedDisplayIdx === idx;
                   return (
                     <button
                       key={idx}
@@ -433,7 +498,7 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
                 })}
               </div>
 
-              {selectedOption !== null && (
+              {selectedDisplayIdx !== null && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -496,7 +561,7 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-6 gap-2">
-                {exam.questions.map((q, idx) => {
+                {processedQuestions.map((q, idx) => {
                   const answered = answers[q.id] !== undefined;
                   const isCurrent = idx === currentIdx;
                   return (
@@ -691,7 +756,7 @@ function ResultView({
           </CardHeader>
           <CardContent>
             <Accordion type="multiple" className="w-full">
-              {exam.questions.map((q, idx) => {
+              {processedQuestions.map((q, idx) => {
                 const r = resultMap.get(q.id);
                 const selectedIdx = r?.selectedIdx ?? null;
                 const isCorrect = r?.isCorrect ?? false;

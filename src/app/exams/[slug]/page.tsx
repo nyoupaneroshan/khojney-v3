@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import {
   Clock,
   FileText,
@@ -81,9 +82,103 @@ export default async function ExamDetailPage({
     include: {
       category: true,
       questions: { orderBy: { order: "asc" } },
+      children: {
+        where: { isPublished: true },
+        orderBy: { createdAt: "asc" },
+        include: {
+          _count: { select: { questions: true, attempts: true } },
+        },
+      },
     },
   });
   if (!exam) notFound();
+
+  // If this is a parent exam (no questions, has children), show the child list
+  if (exam.isParent && exam.children.length > 0) {
+    return (
+      <AppShell user={user}>
+        {/* Breadcrumb + hero */}
+        <div className="border-b bg-gradient-to-b from-secondary/40 to-background">
+          <div className="container-app py-8">
+            <BreadcrumbNav
+              className="mb-4"
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Exams", href: "/exams" },
+                ...(exam.category ? [{ label: exam.category.name, href: `/exams?category=${exam.category.slug}` }] : []),
+                { label: exam.title },
+              ]}
+            />
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary shrink-0">
+                <FileText className="h-7 w-7" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{exam.title}</h1>
+                <p className="mt-2 text-muted-foreground max-w-2xl">{exam.description}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                  <Badge variant="secondary">{exam.children.length} mock tests</Badge>
+                  <Badge variant="outline">Shuffled questions & options</Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Child exam sets */}
+        <section className="py-10">
+          <div className="container-app">
+            <h2 className="text-xl font-bold mb-4">Available Mock Tests</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {exam.children.map((child) => (
+                <Card key={child.id} className="card-hover">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-[10px]">{child.examType}</Badge>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                        child.difficulty === "EASY" ? "bg-emerald-100 text-emerald-700" :
+                        child.difficulty === "HARD" ? "bg-red-100 text-red-700" :
+                        "bg-amber-100 text-amber-700"
+                      }`}>
+                        {child.difficulty}
+                      </span>
+                    </div>
+                    <CardTitle className="text-base leading-snug">
+                      <Link href={`/exams/${child.slug}`} className="hover:text-primary">
+                        {child.title}
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pb-3">
+                    <p className="text-sm text-muted-foreground line-clamp-2">{child.description}</p>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                      <div className="flex flex-col items-center p-2 rounded-md bg-muted">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground mb-0.5" />
+                        <span className="font-medium">{child.durationMin}m</span>
+                      </div>
+                      <div className="flex flex-col items-center p-2 rounded-md bg-muted">
+                        <FileText className="h-3.5 w-3.5 text-muted-foreground mb-0.5" />
+                        <span className="font-medium">{child._count.questions}Q</span>
+                      </div>
+                      <div className="flex flex-col items-center p-2 rounded-md bg-muted">
+                        <Trophy className="h-3.5 w-3.5 text-muted-foreground mb-0.5" />
+                        <span className="font-medium">{child._count.attempts}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <div className="px-6 pb-4">
+                    <Button asChild size="sm" className="w-full">
+                      <Link href={`/exams/${child.slug}`}>Start Test</Link>
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      </AppShell>
+    );
+  }
 
   const [attemptCount, topAttempts, recentAttempts] = await Promise.all([
     db.examAttempt.count({

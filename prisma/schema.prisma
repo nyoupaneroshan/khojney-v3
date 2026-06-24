@@ -179,11 +179,22 @@ model Exam {
   isFeatured   Boolean  @default(false)
   tags         String?  // comma-separated tags
   coverImage   String?
+  // ── Parent/child hierarchy for sub-exams ──
+  parentId     String?  // if set, this exam is a child (set) of the parent
+  parent       Exam?    @relation("ExamTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Exam[]   @relation("ExamTree")
+  isParent     Boolean  @default(false) // true = grouping page only (no direct questions)
+  // ── Randomization ──
+  shuffleQuestions Boolean @default(true) // shuffle question order on each attempt
+  shuffleOptions   Boolean @default(true) // shuffle option order within each question
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   questions  ExamQuestion[]
   attempts   ExamAttempt[]
+
+  @@index([parentId])
+  @@index([isParent, isPublished])
 }
 
 model ExamQuestion {
