@@ -30,6 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { GoogleSignInButton } from "@/components/khojney/google-signin-button";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,27 @@ export default function LoginPage() {
   useEffect(() => {
     const m = sp.get("mode") === "register" ? "register" : "login";
     setMode(m);
+
+    // Show toast for Google OAuth errors
+    const oauthError = sp.get("error");
+    if (oauthError) {
+      const messages: Record<string, string> = {
+        google_not_configured: "Google Sign-In is not configured yet. Please use email login for now.",
+        access_denied: "Google sign-in was cancelled.",
+        missing_params: "Google sign-in failed: missing parameters.",
+        invalid_state: "Google sign-in failed: invalid state. Please try again.",
+        state_mismatch: "Google sign-in failed: state mismatch. Please try again.",
+        token_exchange_failed: "Google sign-in failed: could not verify with Google. Please try again.",
+        profile_fetch_failed: "Google sign-in failed: could not fetch your Google profile.",
+        no_access_token: "Google sign-in failed: no access token received.",
+        no_email: "Google sign-in failed: no email associated with this Google account.",
+      };
+      toast.error(messages[oauthError] ?? "Google sign-in failed. Please try again.");
+      // Clean the URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("error");
+      window.history.replaceState({}, "", url.toString());
+    }
   }, [sp]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -222,6 +244,18 @@ export default function LoginPage() {
                       </Button>
                     </form>
 
+                    {/* Divider */}
+                    <div className="mt-6 flex items-center gap-3">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-xs text-muted-foreground font-medium">OR</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    {/* Google SSO */}
+                    <div className="mt-4">
+                      <GoogleSignInButton callbackUrl={callbackUrl} mode="login" label="Continue with Google" />
+                    </div>
+
                     <div className="mt-6 pt-6 border-t">
                       <p className="text-xs font-medium text-muted-foreground mb-2 text-center">
                         Quick demo login
@@ -353,6 +387,18 @@ export default function LoginPage() {
                         By signing up, you agree to our Terms of Service and Privacy Policy.
                       </p>
                     </form>
+
+                    {/* Divider */}
+                    <div className="mt-6 flex items-center gap-3">
+                      <div className="flex-1 h-px bg-border" />
+                      <span className="text-xs text-muted-foreground font-medium">OR</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    {/* Google SSO */}
+                    <div className="mt-4">
+                      <GoogleSignInButton callbackUrl={callbackUrl} mode="register" label="Sign up with Google" />
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
