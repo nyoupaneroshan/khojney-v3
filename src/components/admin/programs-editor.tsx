@@ -8,10 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 
 export interface ProgramItem {
   name: string;
-  level: string;
-  duration: string;
-  fees: string;
-  description: string;
+  level?: string;
+  duration?: string;
+  fees?: string;
+  description?: string;
   // University programs use `faculty` instead of `fees`
   faculty?: string;
 }

@@ -36,6 +36,10 @@ model User {
   searchHistory  SearchHistory[]
   accounts       Account[]
   sessions       Session[]
+  aiChatSessions AiChatSession[]
+  guestPosts     GuestPost[]     @relation("GuestPostAuthor")
+  communityQuestions CommunityQuestion[] @relation("CommunityQuestionSubmitter")
+  comments       Comment[]       @relation("CommentAuthor")
 }
 
 model Account {
@@ -97,6 +101,8 @@ model Category {
   schools       School[]
   scholarships  Scholarship[]
   posts         BlogPost[]
+  guestPosts    GuestPost[]
+  communityQuestions CommunityQuestion[]
 }
 
 model Tag {
@@ -192,6 +198,7 @@ model Exam {
 
   questions  ExamQuestion[]
   attempts   ExamAttempt[]
+  communityQuestions CommunityQuestion[]
 
   @@index([parentId])
   @@index([isParent, isPublished])
@@ -510,4 +517,119 @@ model GovernmentService {
   updatedAt         DateTime @updatedAt
 
   @@index([category, isPublished])
+}
+
+model Webhook {
+  id String @id @default(cuid())
+  name String
+  url String
+  events String
+  secret String?
+  isActive Boolean @default(true)
+  lastTriggered DateTime?
+  lastStatus String?
+  lastResponse String?
+  triggerCount Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  logs WebhookLog[]
+  @@index([isActive])
+}
+model WebhookLog {
+  id String @id @default(cuid())
+  webhookId String
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  event String
+  payload String
+  statusCode Int?
+  response String?
+  success Boolean @default(false)
+  createdAt DateTime @default(now())
+  @@index([webhookId, createdAt])
+}
+model AiChatSession {
+  id String @id @default(cuid())
+  userId String?
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionUuid String @unique
+  title String @default("New Conversation")
+  messageCount Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages AiChatMessage[]
+  @@index([userId])
+}
+model AiChatMessage {
+  id String @id @default(cuid())
+  sessionId String
+  session AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role String
+  content String
+  tokensUsed Int?
+  createdAt DateTime @default(now())
+  @@index([sessionId, createdAt])
+}
+model GuestPost {
+  id String @id @default(cuid())
+  title String
+  slug String @unique
+  excerpt String?
+  content String
+  coverImage String?
+  categoryId String?
+  category Category? @relation(fields: [categoryId], references: [id])
+  authorId String
+  author User @relation("GuestPostAuthor", fields: [authorId], references: [id])
+  authorName String
+  authorBio String?
+  status String @default("PENDING")
+  adminNotes String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  views Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, createdAt])
+}
+model CommunityQuestion {
+  id String @id @default(cuid())
+  question String
+  optionA String
+  optionB String
+  optionC String
+  optionD String
+  correctAnswer String
+  explanation String?
+  examId String?
+  exam Exam? @relation(fields: [examId], references: [id], onDelete: SetNull)
+  categoryId String?
+  category Category? @relation(fields: [categoryId], references: [id])
+  submitterId String
+  submitter User @relation("CommunityQuestionSubmitter", fields: [submitterId], references: [id])
+  submitterName String
+  status String @default("PENDING")
+  adminNotes String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  upvotes Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([status, createdAt])
+}
+model Comment {
+  id String @id @default(cuid())
+  entity String
+  entityId String
+  userId String
+  user User @relation("CommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  content String
+  parentId String?
+  parent Comment? @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentThread")
+  isPinned Boolean @default(false)
+  isHidden Boolean @default(false)
+  upvotes Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([entity, entityId, createdAt])
 }

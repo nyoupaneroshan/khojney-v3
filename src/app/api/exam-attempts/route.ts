@@ -13,7 +13,7 @@ interface SubmitPayload {
   answers: Record<string, number | null>;
 }
 
-type Payload = Partial<StartPayload & SubmitPayload>;
+type Payload = Partial<StartPayload> & Partial<SubmitPayload> & { action?: string };
 
 /**
  * Exam attempts API.

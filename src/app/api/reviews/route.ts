@@ -35,8 +35,7 @@ export async function POST(req: NextRequest) {
 
   // Verify the entity exists
   const table = ENTITY_TABLE[entity];
-  // @ts-expect-error — dynamic table lookup
-  const record = await db[table].findUnique({ where: { id: entityId }, select: { id: true } });
+  const record = await (db as unknown as Record<string, { findUnique: (args: { where: { id: string }; select: { id: true } }) => Promise<{ id: string } | null> }>)[table]?.findUnique({ where: { id: entityId }, select: { id: true } });
   if (!record) {
     return NextResponse.json({ error: "Entity not found" }, { status: 404 });
   }
@@ -70,8 +69,7 @@ export async function POST(req: NextRequest) {
     });
     const avg = aggregates._avg.rating ?? 0;
     const count = aggregates._count.rating ?? 0;
-    // @ts-expect-error — dynamic table update
-    await db[table].update({
+    await (db as unknown as Record<string, { update: (args: { where: { id: string }; data: { rating: number; reviewCount: number } }) => Promise<unknown> }>)[table]?.update({
       where: { id: entityId },
       data: { rating: Math.round(avg * 10) / 10, reviewCount: count },
     });

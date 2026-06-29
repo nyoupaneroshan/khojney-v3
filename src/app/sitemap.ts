@@ -4,7 +4,7 @@ import { NEPAL_PROVINCES } from "@/lib/constants";
 
 export const revalidate = 3600;
 
-export default async function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://khojney.com";
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/`, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },

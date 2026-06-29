@@ -646,6 +646,12 @@ function ResultView({
     ? result.score >= result.passingMarks
     : pct >= 40;
 
+  // Questions for review (original order, no shuffle)
+  const reviewQuestions = useMemo(
+    () => [...exam.questions].sort((a, b) => a.order - b.order),
+    [exam.questions],
+  );
+
   // Build a lookup of perQuestion by questionId
   const resultMap = useMemo(() => {
     const m = new Map<string, PerQuestionResult>();
@@ -756,7 +762,7 @@ function ResultView({
           </CardHeader>
           <CardContent>
             <Accordion type="multiple" className="w-full">
-              {processedQuestions.map((q, idx) => {
+              {reviewQuestions.map((q, idx) => {
                 const r = resultMap.get(q.id);
                 const selectedIdx = r?.selectedIdx ?? null;
                 const isCorrect = r?.isCorrect ?? false;

@@ -83,7 +83,7 @@ export default async function ExamsListPage({
   }
 
   // Build orderBy
-  let orderBy: Record<string, "asc" | "desc"> = { createdAt: "desc" };
+  let orderBy: Record<string, unknown> = { createdAt: "desc" };
   if (sort === "popular") {
     orderBy = { attempts: { _count: "desc" } };
   } else if (sort === "difficulty") {
@@ -207,7 +207,7 @@ export default async function ExamsListPage({
                 <ExamListPagination
                   currentPage={page}
                   totalPages={totalPages}
-                  searchParams={sp}
+                  searchParams={sp as Record<string, string | undefined>}
                 />
               </div>
             )}

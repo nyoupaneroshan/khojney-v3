@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
-import { requireAdmin } from "../../../../../../../_lib/require-admin";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
