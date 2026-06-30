@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -34,7 +34,37 @@ import { GoogleSignInButton } from "@/components/khojney/google-signin-button";
 
 export const dynamic = "force-dynamic";
 
+function LoginPageFallback() {
+  return (
+    <AppShell user={null}>
+      <div className="container-app py-8 md:py-12">
+        <div className="grid lg:grid-cols-[1fr_1fr] gap-8 max-w-5xl mx-auto">
+          <div>
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+              <p className="mt-2 text-muted-foreground">Loading...</p>
+            </div>
+            <Card>
+              <CardContent className="py-12 flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
   const sp = useSearchParams();
   const initialMode = sp.get("mode") === "register" ? "register" : "login";

@@ -18,6 +18,7 @@ import { ListPageHeader } from "@/components/khojney/list-page-header";
 import { FiltersShell, ClearFiltersLink } from "@/components/khojney/filters-shell";
 import { SearchBar } from "@/components/khojney/search-bar";
 import { FilterSelect } from "@/components/khojney/filter-select";
+import { FilterSuspense } from "@/components/khojney/filter-suspense";
 import { PaginationControl } from "@/components/khojney/pagination-control";
 import { EmptyState } from "@/components/khojney/empty-state";
 import { EntityBadge } from "@/components/khojney/entity-badge";
@@ -145,53 +146,56 @@ export default async function JobsListPage({
         <div className="container-app">
           <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
             <FiltersShell title="Filter jobs" activeCount={activeFilterCount}>
-              <div className="space-y-4">
-                <FilterSelect
-                  basePath={BASE_PATH}
-                  param="jobType"
-                  label="Job type"
-                  includeAll="All types"
-                  options={JOB_TYPE_OPTIONS}
-                />
-                <FilterSelect
-                  basePath={BASE_PATH}
-                  param="category"
-                  label="Category"
-                  includeAll="All categories"
-                  options={CATEGORY_OPTIONS}
-                />
-                <FilterSelect
-                  basePath={BASE_PATH}
-                  param="experienceLevel"
-                  label="Experience"
-                  includeAll="All levels"
-                  options={EXPERIENCE_OPTIONS}
-                />
-                <Separator />
-                <ClearFiltersLink basePath={BASE_PATH} />
-              </div>
+              <FilterSuspense>
+                <div className="space-y-4">
+                  <FilterSelect
+                    basePath={BASE_PATH}
+                    param="jobType"
+                    label="Job type"
+                    includeAll="All types"
+                    options={JOB_TYPE_OPTIONS}
+                  />
+                  <FilterSelect
+                    basePath={BASE_PATH}
+                    param="category"
+                    label="Category"
+                    includeAll="All categories"
+                    options={CATEGORY_OPTIONS}
+                  />
+                  <FilterSelect
+                    basePath={BASE_PATH}
+                    param="experienceLevel"
+                    label="Experience"
+                    includeAll="All levels"
+                    options={EXPERIENCE_OPTIONS}
+                  />
+                  <Separator />
+                  <ClearFiltersLink basePath={BASE_PATH} />
+                </div>
+              </FilterSuspense>
             </FiltersShell>
 
             <div>
-              {/* Toolbar: search + sort */}
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <SearchBar
-                  basePath={BASE_PATH}
-                  placeholder="Search by title, company, or location..."
-                  className="sm:max-w-md"
-                />
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Sort:</span>
-                  <FilterSelect
+              <FilterSuspense>
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <SearchBar
                     basePath={BASE_PATH}
-                    param="sort"
-                    includeAll="Default"
-                    options={SORT_OPTIONS}
-                    resetPage={false}
-                    className="min-w-[180px]"
+                    placeholder="Search by title, company, or location..."
+                    className="sm:max-w-md"
                   />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Sort:</span>
+                    <FilterSelect
+                      basePath={BASE_PATH}
+                      param="sort"
+                      includeAll="Default"
+                      options={SORT_OPTIONS}
+                      resetPage={false}
+                      className="min-w-[180px]"
+                    />
+                  </div>
                 </div>
-              </div>
+              </FilterSuspense>
 
               {jobs.length === 0 ? (
                 <EmptyState

@@ -8,6 +8,7 @@ import { ListPageHeader } from "@/components/khojney/list-page-header";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { SearchBar } from "@/components/khojney/search-bar";
 import { FilterSelect } from "@/components/khojney/filter-select";
+import { FilterSuspense } from "@/components/khojney/filter-suspense";
 import { PaginationControl } from "@/components/khojney/pagination-control";
 import { EmptyState } from "@/components/khojney/empty-state";
 import { EntityBadge } from "@/components/khojney/entity-badge";
@@ -117,19 +118,21 @@ export default async function BlogListPage({
         <div className="container-app">
           {/* Toolbar */}
           <div className="mb-8 flex flex-col gap-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <SearchBar
-                basePath={BASE_PATH}
-                placeholder="Search articles..."
-                className="sm:max-w-md"
-              />
-              <FilterSelect
-                basePath={BASE_PATH}
-                param="category"
-                includeAll="All categories"
-                options={categories.map((c) => ({ label: c.name, value: c.slug }))}
-              />
-            </div>
+            <FilterSuspense>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <SearchBar
+                  basePath={BASE_PATH}
+                  placeholder="Search articles..."
+                  className="sm:max-w-md"
+                />
+                <FilterSelect
+                  basePath={BASE_PATH}
+                  param="category"
+                  includeAll="All categories"
+                  options={categories.map((c) => ({ label: c.name, value: c.slug }))}
+                />
+              </div>
+            </FilterSuspense>
             {tags.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium text-muted-foreground">Tags:</span>

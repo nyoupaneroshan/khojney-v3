@@ -9,6 +9,7 @@ import { FiltersShell, ClearFiltersLink } from "@/components/khojney/filters-she
 import { SearchBar } from "@/components/khojney/search-bar";
 import { FilterSelect } from "@/components/khojney/filter-select";
 import { FilterTextInput } from "@/components/khojney/filter-text-input";
+import { FilterSuspense } from "@/components/khojney/filter-suspense";
 import { PaginationControl } from "@/components/khojney/pagination-control";
 import { EmptyState } from "@/components/khojney/empty-state";
 import { AvatarInitial } from "@/components/khojney/avatar-initial";
@@ -133,73 +134,77 @@ export default async function CollegesListPage({
         <div className="container-app">
           <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
             <FiltersShell title="Filter colleges" activeCount={activeFilterCount}>
-              <div className="space-y-4">
-                <FilterSelect
-                  basePath={BASE_PATH}
-                  param="province"
-                  label="Province"
-                  includeAll="All provinces"
-                  options={NEPAL_PROVINCES.map((p) => ({ label: p, value: p }))}
-                />
-                <FilterSelect
-                  basePath={BASE_PATH}
-                  param="district"
-                  label="District"
-                  includeAll="All districts"
-                  options={NEPAL_DISTRICTS.map((d) => ({ label: d, value: d }))}
-                />
-                <FilterTextInput
-                  basePath={BASE_PATH}
-                  param="affiliation"
-                  label="Affiliation"
-                  placeholder="e.g. TU, KU, PU, CTEVT"
-                />
-                <FilterSelect
-                  basePath={BASE_PATH}
-                  param="type"
-                  label="Type"
-                  includeAll="All types"
-                  options={TYPE_OPTIONS}
-                />
-                <FilterSelect
-                  basePath={BASE_PATH}
-                  param="category"
-                  label="Category"
-                  includeAll="All categories"
-                  options={categories.map((c) => ({ label: c.name, value: c.id }))}
-                />
-                <FilterSelect
-                  basePath={BASE_PATH}
-                  param="minRating"
-                  label="Min rating"
-                  includeAll="Any rating"
-                  options={RATING_OPTIONS}
-                />
-                <Separator />
-                <ClearFiltersLink basePath={BASE_PATH} />
-              </div>
+              <FilterSuspense>
+                <div className="space-y-4">
+                  <FilterSelect
+                    basePath={BASE_PATH}
+                    param="province"
+                    label="Province"
+                    includeAll="All provinces"
+                    options={NEPAL_PROVINCES.map((p) => ({ label: p, value: p }))}
+                  />
+                  <FilterSelect
+                    basePath={BASE_PATH}
+                    param="district"
+                    label="District"
+                    includeAll="All districts"
+                    options={NEPAL_DISTRICTS.map((d) => ({ label: d, value: d }))}
+                  />
+                  <FilterTextInput
+                    basePath={BASE_PATH}
+                    param="affiliation"
+                    label="Affiliation"
+                    placeholder="e.g. TU, KU, PU, CTEVT"
+                  />
+                  <FilterSelect
+                    basePath={BASE_PATH}
+                    param="type"
+                    label="Type"
+                    includeAll="All types"
+                    options={TYPE_OPTIONS}
+                  />
+                  <FilterSelect
+                    basePath={BASE_PATH}
+                    param="category"
+                    label="Category"
+                    includeAll="All categories"
+                    options={categories.map((c) => ({ label: c.name, value: c.id }))}
+                  />
+                  <FilterSelect
+                    basePath={BASE_PATH}
+                    param="minRating"
+                    label="Min rating"
+                    includeAll="Any rating"
+                    options={RATING_OPTIONS}
+                  />
+                  <Separator />
+                  <ClearFiltersLink basePath={BASE_PATH} />
+                </div>
+              </FilterSuspense>
             </FiltersShell>
 
             <div>
               {/* Toolbar: search + sort */}
-              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <SearchBar
-                  basePath={BASE_PATH}
-                  placeholder="Search by name, description, or city..."
-                  className="sm:max-w-md"
-                />
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Sort:</span>
-                  <FilterSelect
+              <FilterSuspense>
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <SearchBar
                     basePath={BASE_PATH}
-                    param="sort"
-                    includeAll="Default"
-                    options={SORT_OPTIONS}
-                    resetPage={false}
-                    className="min-w-[160px]"
+                    placeholder="Search by name, description, or city..."
+                    className="sm:max-w-md"
                   />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Sort:</span>
+                    <FilterSelect
+                      basePath={BASE_PATH}
+                      param="sort"
+                      includeAll="Default"
+                      options={SORT_OPTIONS}
+                      resetPage={false}
+                      className="min-w-[160px]"
+                    />
+                  </div>
                 </div>
-              </div>
+              </FilterSuspense>
 
               {colleges.length === 0 ? (
                 <EmptyState
