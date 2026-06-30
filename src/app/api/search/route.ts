@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
+import { RateLimiter } from "@/lib/rate-limit";
 
 interface SearchHit {
   type: string;
@@ -25,15 +26,43 @@ const MODULE_LABELS: Record<string, string> = {
   GOVERNMENT_SERVICE: "Government Service",
 };
 
+// 30 searches per minute per IP (or per user if logged in).
+const searchLimiter = new RateLimiter({ windowMs: 60_000, max: 30 });
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
 /**
  * Universal search API.
  *
  * GET /api/search?q=...&module=...&page=1&pageSize=10
  * Searches across Exams, Colleges, Schools, Universities, Scholarships, BlogPosts.
+ *
+ * Rate-limited to 30 requests/minute per client to prevent abuse.
  */
 export async function GET(req: NextRequest) {
+  // Rate limit
+  const ip = getClientIp(req);
+  const rl = searchLimiter.check(`search:${ip}`);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many searches. Please slow down." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+        },
+      }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
-  const q = (searchParams.get("q") ?? "").trim();
+  const q = (searchParams.get("q") ?? "").trim().slice(0, 200); // cap query length
   const moduleParam = searchParams.get("module")?.toUpperCase() ?? null;
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10) || 1);
   const pageSize = Math.min(
@@ -51,12 +80,14 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // Reuse the cached session — `getSession()` is wrapped in `cache()`, so
+  // additional calls within the same request are free.
   const session = await getSession();
 
   const results: SearchHit[] = [];
   const wantsAll = !moduleParam;
 
-  // Run searches in parallel
+  // Run searches in parallel (batch)
   const tasks: Promise<SearchHit[]>[] = [];
 
   if (wantsAll || moduleParam === "EXAM") {
@@ -100,7 +131,7 @@ export async function GET(req: NextRequest) {
   const start = (page - 1) * pageSize;
   const paged = allResults.slice(start, start + pageSize);
 
-  // Save search history asynchronously (non-blocking)
+  // Save search history asynchronously (non-blocking fire-and-forget)
   if (session) {
     db.searchHistory
       .create({
@@ -112,7 +143,7 @@ export async function GET(req: NextRequest) {
         },
       })
       .catch(() => {
-        // ignore errors
+        // ignore errors — history is best-effort
       });
   }
 
@@ -126,6 +157,9 @@ export async function GET(req: NextRequest) {
   });
 }
 
+// Each search helper uses `select` (not `include`) to fetch only the fields
+// the response needs — no `_count` aggregations unless explicitly used.
+
 async function searchExams(q: string): Promise<SearchHit[]> {
   const rows = await db.exam.findMany({
     where: {
@@ -137,7 +171,16 @@ async function searchExams(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
-    include: { category: true, _count: { select: { attempts: true } } },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      coverImage: true,
+      difficulty: true,
+      durationMin: true,
+      category: { select: { name: true } },
+    },
   });
   return rows.map((e) => ({
     type: "EXAM",
@@ -151,8 +194,6 @@ async function searchExams(q: string): Promise<SearchHit[]> {
       category: e.category?.name ?? null,
       difficulty: e.difficulty,
       duration: `${e.durationMin} min`,
-      questions: e._count.attempts,
-      attempts: e._count.attempts,
     },
   }));
 }
@@ -170,7 +211,19 @@ async function searchColleges(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
-    include: { category: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      logo: true,
+      coverImage: true,
+      city: true,
+      district: true,
+      affiliation: true,
+      rating: true,
+      category: { select: { name: true } },
+    },
   });
   return rows.map((c) => ({
     type: "COLLEGE",
@@ -202,7 +255,19 @@ async function searchSchools(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
-    include: { category: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      logo: true,
+      coverImage: true,
+      city: true,
+      district: true,
+      level: true,
+      rating: true,
+      category: { select: { name: true } },
+    },
   });
   return rows.map((s) => ({
     type: "SCHOOL",
@@ -234,6 +299,18 @@ async function searchUniversities(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      logo: true,
+      coverImage: true,
+      city: true,
+      type: true,
+      ranking: true,
+      establishedYear: true,
+    },
   });
   return rows.map((u) => ({
     type: "UNIVERSITY",
@@ -264,7 +341,19 @@ async function searchScholarships(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
-    include: { category: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      provider: true,
+      amount: true,
+      level: true,
+      field: true,
+      deadline: true,
+      coverImage: true,
+      category: { select: { name: true } },
+    },
   });
   return rows.map((s) => ({
     type: "SCHOLARSHIP",
@@ -295,7 +384,18 @@ async function searchPosts(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
-    include: { category: true, author: true },
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      excerpt: true,
+      content: true,
+      coverImage: true,
+      readTimeMin: true,
+      publishedAt: true,
+      category: { select: { name: true } },
+      author: { select: { name: true } },
+    },
   });
   return rows.map((p) => ({
     type: "BLOG",
@@ -326,6 +426,18 @@ async function searchBanks(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      shortName: true,
+      description: true,
+      logo: true,
+      type: true,
+      headquarters: true,
+      savingsRateMax: true,
+      branchCount: true,
+    },
   });
   return rows.map((b) => ({
     type: "BANK",
@@ -358,6 +470,20 @@ async function searchJobs(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      company: true,
+      companyLogo: true,
+      location: true,
+      jobType: true,
+      category: true,
+      experienceLevel: true,
+      salaryMax: true,
+      deadline: true,
+    },
   });
   return rows.map((j) => ({
     type: "JOB",
@@ -392,6 +518,18 @@ async function searchGovernmentServices(q: string): Promise<SearchHit[]> {
       ],
     },
     take: 25,
+    select: {
+      id: true,
+      slug: true,
+      title: true,
+      description: true,
+      category: true,
+      ministry: true,
+      department: true,
+      office: true,
+      processingTime: true,
+      applicationFee: true,
+    },
   });
   return rows.map((g) => ({
     type: "GOVERNMENT_SERVICE",

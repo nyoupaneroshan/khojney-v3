@@ -90,8 +90,16 @@ export async function GET(req: NextRequest) {
   }
   const reviews = await db.review.findMany({
     where: { entity, entityId },
-    include: { user: { select: { name: true, image: true } } },
+    select: {
+      id: true,
+      rating: true,
+      title: true,
+      comment: true,
+      createdAt: true,
+      user: { select: { name: true, image: true } },
+    },
     orderBy: { createdAt: "desc" },
+    take: 100, // cap — paginated UI should request more if needed
   });
   return NextResponse.json({ reviews });
 }

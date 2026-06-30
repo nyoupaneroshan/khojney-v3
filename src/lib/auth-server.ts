@@ -3,6 +3,7 @@
  * Client components should import from `@/lib/auth` (types only).
  */
 import "server-only";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
@@ -20,40 +21,63 @@ const BCRYPT_ROUNDS = 12;
 
 /**
  * Read the current session from the signed cookie + DB.
+ *
+ * Wrapped in React's `cache()` so calling `getSession()` multiple times in
+ * the same request (e.g. from a layout, a page, and a child component) only
+ * hits the database once. The result is memoized for the lifetime of the
+ * request.
+ *
+ * Resilient to connection pool exhaustion: if the DB pool times out, we
+ * return null (treating the user as logged-out) rather than crashing the
+ * entire page. The page can still render its public shell.
+ *
  * Returns null if: no cookie, bad signature, session expired, session not
- * found in DB, or user is deactivated.
+ * found in DB, user is deactivated, OR the DB pool is exhausted.
  */
-export async function getSession(): Promise<SessionUser | null> {
+export const getSession = cache(async (): Promise<SessionUser | null> => {
   const cookieStore = await cookies();
   const cookieValue = cookieStore.get(sessionCookieName)?.value;
   const token = verifySessionCookie(cookieValue);
   if (!token) return null;
 
-  const session = await db.session.findUnique({
-    where: { sessionToken: token },
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          image: true,
-          isActive: true,
+  let session;
+  try {
+    session = await db.session.findUnique({
+      where: { sessionToken: token },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            image: true,
+            isActive: true,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (err) {
+    // Connection pool timeout, DB restart, transient network error, etc.
+    // Log server-side but degrade gracefully — treat the user as logged-out
+    // so the public page shell still renders. This is safer than throwing
+    // a 500 on every page that calls getSession().
+    console.error(
+      "getSession: DB error (treating as logged-out):",
+      err instanceof Error ? err.message : String(err)
+    );
+    return null;
+  }
 
   if (!session) return null;
   if (session.expires.getTime() < Date.now()) {
-    // Expired — clean up.
-    await db.session.delete({ where: { id: session.id } }).catch(() => {});
+    // Expired — clean up. Best-effort, don't block on it.
+    db.session.delete({ where: { id: session.id } }).catch(() => {});
     return null;
   }
   if (!session.user.isActive) {
-    // Deactivated user — clean up their session.
-    await db.session.delete({ where: { id: session.id } }).catch(() => {});
+    // Deactivated user — clean up. Best-effort.
+    db.session.delete({ where: { id: session.id } }).catch(() => {});
     return null;
   }
 
@@ -65,7 +89,7 @@ export async function getSession(): Promise<SessionUser | null> {
     role: user.role,
     image: user.image,
   };
-}
+});
 
 /**
  * Create a new session for a user. Writes the signed cookie + a row in the
