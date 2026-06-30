@@ -49,7 +49,7 @@ async function fireWebhook(
   const safety = isSafeUrl(url);
   if (!safety.ok) {
     console.warn(`Webhook ${id} URL rejected: ${safety.reason}`);
-    await logWebhookFailure(id, payload, safety.reason);
+    await logWebhookFailure(id, payload, safety.reason ?? "Unknown reason");
     return;
   }
 

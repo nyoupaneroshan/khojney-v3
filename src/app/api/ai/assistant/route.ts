@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
   // Cap each message length and total count.
   const trimmed: ChatMessage[] = userMessages
     .slice(-MAX_MESSAGES)
-    .map((m) => ({
+    .map((m): ChatMessage => ({
       role: m.role === "assistant" || m.role === "system" ? m.role : "user",
       content: String(m.content ?? "").slice(0, MAX_MESSAGE_LEN),
     }))

@@ -9,9 +9,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
+  // Use `select` (not `include`) so we can omit the `secret` column.
   const w = await db.webhook.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { logs: true } } },
     select: {
       id: true,
       name: true,
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   if (Array.isArray(b.events)) {
     events = b.events.filter((e: unknown): e is string => typeof e === "string");
   } else if (typeof b.events === "string") {
-    events = b.events.split(",").map((s) => s.trim()).filter(Boolean);
+    events = b.events.split(",").map((s: string) => s.trim()).filter(Boolean);
   } else {
     return NextResponse.json(
       { error: "events must be a string array or comma-separated string" },
