@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { USER_ROLES } from "@/lib/constants";
+import { clearAllUserSessions } from "@/lib/auth-server";
 import { requireAdmin } from "@/app/api/admin/_lib/require-admin";
 
 export const dynamic = "force-dynamic";
@@ -25,9 +26,9 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
       phone: true,
       location: true,
       bio: true,
+      isActive: true,
       createdAt: true,
       updatedAt: true,
-      passwordHash: true,
       _count: {
         select: {
           examAttempts: true,
@@ -94,7 +95,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
   return NextResponse.json(updated);
 }
 
-// DELETE /api/admin/users/[id] — deactivate (unset password hash) instead of full delete
+// DELETE /api/admin/users/[id] — deactivate the user and revoke all sessions
 export async function DELETE(_req: NextRequest, { params }: RouteParams) {
   const { user: adminUser, error } = await requireAdmin();
   if (error) return error;
@@ -114,11 +115,15 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
     );
   }
 
-  // Deactivate by clearing password hash (user can no longer log in via password)
+  // Deactivate the account (login will reject) and revoke every active session.
   await db.user.update({
     where: { id },
-    data: { passwordHash: null },
+    data: {
+      isActive: false,
+      passwordHash: null, // also clear legacy password hashes
+    },
   });
+  await clearAllUserSessions(id);
 
   return NextResponse.json({ success: true, deactivated: true });
 }

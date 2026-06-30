@@ -52,7 +52,12 @@ export interface ExamRunnerQuestion {
   id: string;
   question: string;
   options: string[];
-  correctIdx: number;
+  // `correctIdx` and `explanation` are intentionally NOT shipped to the client
+  // before submission — they are only returned in the submit-response so users
+  // cannot cheat by inspecting the page source. Both fields are kept optional
+  // here so the client type can also represent the post-submit shape (where
+  // these fields ARE populated).
+  correctIdx?: number;
   explanation?: string | null;
   marks: number;
   order: number;
@@ -78,6 +83,7 @@ interface PerQuestionResult {
   selectedIdx: number | null;
   isCorrect: boolean;
   correctIdx: number;
+  explanation: string | null;
 }
 
 interface SubmitResult {
@@ -766,6 +772,8 @@ function ResultView({
                 const r = resultMap.get(q.id);
                 const selectedIdx = r?.selectedIdx ?? null;
                 const isCorrect = r?.isCorrect ?? false;
+                const correctIdx = r?.correctIdx;
+                const explanation = r?.explanation;
                 return (
                   <AccordionItem key={q.id} value={`q-${q.id}`}>
                     <AccordionTrigger className="hover:no-underline">
@@ -796,7 +804,7 @@ function ResultView({
                     <AccordionContent>
                       <div className="space-y-2 pl-10">
                         {q.options.map((opt, oIdx) => {
-                          const isCorrectOpt = oIdx === q.correctIdx;
+                          const isCorrectOpt = correctIdx !== undefined && oIdx === correctIdx;
                           const isUserOpt = oIdx === selectedIdx;
                           return (
                             <div
@@ -834,12 +842,12 @@ function ResultView({
                             </div>
                           );
                         })}
-                        {q.explanation && (
+                        {explanation && (
                           <div className="mt-3 rounded-md bg-muted p-3 text-sm">
                             <p className="font-medium text-xs text-muted-foreground mb-1">
                               Explanation
                             </p>
-                            <p className="text-foreground">{q.explanation}</p>
+                            <p className="text-foreground">{explanation}</p>
                           </div>
                         )}
                       </div>

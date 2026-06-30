@@ -241,7 +241,11 @@ function UserMenu({ user }: { user: AdminUser }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => router.push("/api/auth/logout")}
+          onClick={async () => {
+            await fetch("/api/auth/logout", { method: "POST" });
+            router.push("/");
+            router.refresh();
+          }}
           className="cursor-pointer text-destructive focus:text-destructive"
         >
           <LogOut className="mr-2 h-4 w-4" /> Logout

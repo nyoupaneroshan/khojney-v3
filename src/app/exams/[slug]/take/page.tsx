@@ -54,12 +54,13 @@ export default async function ExamTakePage({
       } catch {
         options = [];
       }
+      // SECURITY: Do NOT ship `correctIdx` or `explanation` to the client.
+      // The server re-fetches them in /api/exam-attempts and returns them in
+      // the submit-response — that's the only place they should appear.
       return {
         id: q.id,
         question: q.question,
         options,
-        correctIdx: q.correctIdx,
-        explanation: q.explanation,
         marks: q.marks,
         order: q.order,
       };

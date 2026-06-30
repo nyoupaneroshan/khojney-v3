@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { env } from "@/lib/env";
 
 /**
  * GET /api/auth/google
@@ -8,9 +9,9 @@ import { NextRequest, NextResponse } from "next/server";
  * After consent, Google redirects to /api/auth/google/callback.
  */
 export async function GET(req: NextRequest) {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectBase = process.env.GOOGLE_REDIRECT_BASE ?? "http://localhost:3000";
+  const clientId = env.GOOGLE_CLIENT_ID;
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectBase = env.GOOGLE_REDIRECT_BASE;
 
   // If Google OAuth is not configured, redirect to login with an error message
   if (!clientId || !clientSecret || clientId === "your-google-client-id-here") {
@@ -21,7 +22,14 @@ export async function GET(req: NextRequest) {
 
   const redirectUri = `${redirectBase}/api/auth/google/callback`;
   const state = crypto.randomUUID(); // CSRF protection
-  const callbackUrl = req.nextUrl.searchParams.get("callbackUrl") ?? "/dashboard";
+  // Validate callbackUrl — must be a same-origin path to prevent open redirect.
+  const rawCallbackUrl = req.nextUrl.searchParams.get("callbackUrl") ?? "/dashboard";
+  const callbackUrl =
+    typeof rawCallbackUrl === "string" &&
+    rawCallbackUrl.startsWith("/") &&
+    !rawCallbackUrl.startsWith("//")
+      ? rawCallbackUrl
+      : "/dashboard";
   const mode = req.nextUrl.searchParams.get("mode") ?? "login";
 
   const params = new URLSearchParams({
@@ -43,7 +51,7 @@ export async function GET(req: NextRequest) {
     sameSite: "lax",
     path: "/",
     maxAge: 600, // 10 minutes
-    secure: false,
+    secure: env.isProd,
   });
 
   return res;

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import ZAI from "z-ai-web-dev-sdk";
+import { getSession } from "@/lib/auth-server";
+import { aiLimiter, aiDailyLimiter } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +32,63 @@ Guidelines:
 
 Always be encouraging and supportive — Nepali students often face significant pressure and your tone should be motivating.`;
 
+const MAX_MESSAGE_LEN = 4_000; // per message
+const MAX_MESSAGES = 10; // per request (we keep the last 10)
+
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
+
+/**
+ * POST /api/ai/assistant
+ *
+ * Authenticated, rate-limited AI chat endpoint.
+ *   - Requires a logged-in session (no anonymous use).
+ *   - 10 messages per minute per user.
+ *   - 50 messages per day per user.
+ *   - Each message capped at 4,000 chars.
+ *   - Upstream SDK errors are logged server-side; the client only sees a
+ *     generic "AI service unavailable" message (no provider details leaked).
+ */
 export async function POST(req: NextRequest) {
+  // 1. Require auth.
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 2. Rate limit (per-user). Fall back to IP if the user ID is somehow empty.
+  const identifier = session.id || getClientIp(req);
+  const rlMin = aiLimiter.check(`ai:min:${identifier}`);
+  if (!rlMin.allowed) {
+    return NextResponse.json(
+      { error: "Too many messages. Please slow down." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((rlMin.resetAt - Date.now()) / 1000)),
+        },
+      }
+    );
+  }
+  const rlDay = aiDailyLimiter.check(`ai:day:${identifier}`);
+  if (!rlDay.allowed) {
+    return NextResponse.json(
+      { error: "Daily message limit reached. Try again tomorrow." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((rlDay.resetAt - Date.now()) / 1000)),
+        },
+      }
+    );
+  }
+
+  // 3. Parse + validate body.
   let body: { messages?: ChatMessage[]; question?: string };
   try {
     body = await req.json();
@@ -42,15 +100,29 @@ export async function POST(req: NextRequest) {
     body.messages ??
     (body.question ? [{ role: "user" as const, content: body.question }] : []);
 
-  if (!userMessages.length) {
+  if (!Array.isArray(userMessages) || userMessages.length === 0) {
+    return NextResponse.json({ error: "No messages provided" }, { status: 400 });
+  }
+
+  // Cap each message length and total count.
+  const trimmed: ChatMessage[] = userMessages
+    .slice(-MAX_MESSAGES)
+    .map((m) => ({
+      role: m.role === "assistant" || m.role === "system" ? m.role : "user",
+      content: String(m.content ?? "").slice(0, MAX_MESSAGE_LEN),
+    }))
+    .filter((m) => m.content.length > 0);
+
+  if (trimmed.length === 0) {
     return NextResponse.json({ error: "No messages provided" }, { status: 400 });
   }
 
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
-    ...userMessages.slice(-10),
+    ...trimmed,
   ];
 
+  // 4. Call the AI provider.
   try {
     const zai = await ZAI.create();
     const response = await zai.chat.completions.create({
@@ -62,11 +134,14 @@ export async function POST(req: NextRequest) {
     const reply = response.choices?.[0]?.message?.content ?? "";
     return NextResponse.json({ ok: true, reply, usage: response.usage });
   } catch (err: unknown) {
-    console.error("AI assistant error:", err);
-    const message = err instanceof Error ? err.message : "Unknown error";
+    // Log the full error server-side; return only a generic message to the client.
+    console.error(
+      "AI assistant error:",
+      err instanceof Error ? err.message : String(err)
+    );
     return NextResponse.json(
-      { error: "AI service unavailable", details: message },
-      { status: 503 },
+      { error: "AI service unavailable" },
+      { status: 503 }
     );
   }
 }

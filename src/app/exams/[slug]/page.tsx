@@ -188,13 +188,13 @@ export default async function ExamDetailPage({
       where: { examId: exam.id, finishedAt: { not: null } },
       orderBy: [{ score: "desc" }, { durationSec: "asc" }],
       take: 10,
-      include: { user: { select: { name: true, email: true } } },
+      include: { user: { select: { name: true } } },
     }),
     db.examAttempt.findMany({
       where: { examId: exam.id, finishedAt: { not: null } },
       orderBy: { finishedAt: "desc" },
       take: 5,
-      include: { user: { select: { name: true, email: true } } },
+      include: { user: { select: { name: true } } },
     }),
   ]);
 
@@ -388,7 +388,7 @@ export default async function ExamDetailPage({
                     <LeaderRow
                       key={a.id}
                       rank={idx + 1}
-                      name={a.user.name ?? a.user.email}
+                      name={a.user.name ?? "Anonymous user"}
                       score={a.score}
                       totalMarks={a.totalMarks}
                       durationSec={a.durationSec ?? 0}
@@ -418,12 +418,12 @@ export default async function ExamDetailPage({
                       <div className="flex items-center gap-3 min-w-0">
                         <Avatar>
                           <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                            {(a.user.name ?? a.user.email)[0]?.toUpperCase()}
+                            {(a.user.name ?? "A")[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {a.user.name ?? a.user.email}
+                            {a.user.name ?? "Anonymous"}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {a.finishedAt?.toLocaleDateString("en-US", {

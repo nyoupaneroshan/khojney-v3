@@ -106,6 +106,7 @@ async function handleSubmit(
     selectedIdx: number | null;
     isCorrect: boolean;
     correctIdx: number;
+    explanation: string | null;
   }> = [];
 
   for (const q of attempt.exam.questions) {
@@ -117,6 +118,7 @@ async function handleSubmit(
         selectedIdx: null,
         isCorrect: false,
         correctIdx: q.correctIdx,
+        explanation: q.explanation,
       });
       continue;
     }
@@ -131,6 +133,7 @@ async function handleSubmit(
       selectedIdx,
       isCorrect,
       correctIdx: q.correctIdx,
+      explanation: q.explanation,
     });
   }
 

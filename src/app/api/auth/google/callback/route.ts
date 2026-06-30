@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { setSession } from "@/lib/auth-server";
+import { upsertOAuthUser, setSession } from "@/lib/auth-server";
+import { env } from "@/lib/env";
 
 /**
  * GET /api/auth/google/callback
@@ -41,9 +41,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=state_mismatch", req.url));
   }
 
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectBase = process.env.GOOGLE_REDIRECT_BASE ?? "http://localhost:3000";
+  const clientId = env.GOOGLE_CLIENT_ID;
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectBase = env.GOOGLE_REDIRECT_BASE;
   const redirectUri = `${redirectBase}/api/auth/google/callback`;
 
   if (!clientId || !clientSecret) {
@@ -69,7 +69,9 @@ export async function GET(req: NextRequest) {
   }
 
   if (!tokenResponse.ok) {
-    console.error("Token exchange failed:", await tokenResponse.text());
+    // Log only the status code (not the body — body may contain OAuth error_description
+    // with sensitive details). Full body goes to server logs only.
+    console.error(`OAuth token exchange failed: HTTP ${tokenResponse.status}`);
     return NextResponse.redirect(new URL("/login?error=token_exchange_failed", req.url));
   }
 
@@ -103,29 +105,28 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=no_email", req.url));
   }
 
-  // Find or create user
-  const user = await db.user.upsert({
-    where: { email },
-    update: {
-      // Update name and avatar if the user already exists
-      name,
-      image: avatar,
-    },
-    create: {
-      email,
-      name,
-      image: avatar,
-      role: "USER",
-      passwordHash: null, // Google users don't have a password
-      bio: "Signed up via Google",
-    },
-  });
+  // Find or create user via the OAuth helper (never grants admin role)
+  let user;
+  try {
+    user = await upsertOAuthUser({ email, name, image: avatar });
+  } catch (err) {
+    console.error("OAuth user upsert failed:", err instanceof Error ? err.message : err);
+    return NextResponse.redirect(new URL("/login?error=profile_fetch_failed", req.url));
+  }
 
   // Set session cookie
   await setSession(user.id);
 
-  // Clear the OAuth state cookie
-  const callbackUrl = stateData.callbackUrl ?? "/dashboard";
+  // Validate callbackUrl — must be a same-origin path (no protocol/host).
+  // Prevents open-redirect attacks where an attacker crafts a Google sign-in
+  // link with callbackUrl=https://evil.com.
+  const rawCallbackUrl = stateData.callbackUrl ?? "/dashboard";
+  const callbackUrl =
+    typeof rawCallbackUrl === "string" &&
+    rawCallbackUrl.startsWith("/") &&
+    !rawCallbackUrl.startsWith("//")
+      ? rawCallbackUrl
+      : "/dashboard";
   const res = NextResponse.redirect(new URL(callbackUrl, req.url));
   res.cookies.delete("google_oauth_state");
   return res;
