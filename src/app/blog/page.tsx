@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate, formatNumber } from "@/components/khojney/format";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
 import { cn } from "@/lib/utils";
+import { getCachedCategories, getCachedBlogTags } from "@/lib/cache";
 
 export const revalidate = 3600;
 const BASE_PATH = "/blog";
@@ -76,14 +77,10 @@ export default async function BlogListPage({
         tags: true,
       },
     }),
-    db.category.findMany({
-      where: { module: "BLOG" },
-      orderBy: { name: "asc" },
-    }),
-    db.tag.findMany({
-      orderBy: { name: "asc" },
-      take: 30,
-    }),
+    // Cached: blog categories change rarely.
+    getCachedCategories("BLOG"),
+    // Cached: blog tags change rarely.
+    getCachedBlogTags(),
   ]);
 
   // Fetch the featured post for default view

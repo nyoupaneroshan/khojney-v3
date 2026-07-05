@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/app/api/admin/_lib/require-admin";
 import { parsePagination, slugify, stringifyJson } from "@/lib/admin-utils";
+import { bustModule } from "@/lib/cache-bust";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,10 @@ export async function POST(req: NextRequest) {
       isPublished: body.isPublished !== false,
     },
   });
+
+  // Bust the public featured-colleges + homepage-stats caches so the
+  // new college shows up immediately on the homepage and list page.
+  bustModule("college");
 
   return NextResponse.json(college, { status: 201 });
 }

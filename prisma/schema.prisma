@@ -202,6 +202,11 @@ model Exam {
   // ── Randomization ──
   shuffleQuestions Boolean @default(true) // shuffle question order on each attempt
   shuffleOptions   Boolean @default(true) // shuffle option order within each question
+  // ── SEO fields (optional, populated by seed script + admin) ──
+  seoTitle        String?
+  seoDescription  String?
+  seoContent      String? // long-form markdown for SEO landing pages
+  keywords        String? // comma-separated keywords for meta tags
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

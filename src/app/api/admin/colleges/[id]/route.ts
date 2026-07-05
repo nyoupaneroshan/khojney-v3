@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/app/api/admin/_lib/require-admin";
 import { slugify, stringifyJson } from "@/lib/admin-utils";
+import { bustModule } from "@/lib/cache-bust";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,9 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     },
   });
 
+  // Bust caches so the homepage + list page reflect the update.
+  bustModule("college");
+
   return NextResponse.json(updated);
 }
 
@@ -112,6 +116,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   try {
     await db.college.delete({ where: { id } });
+    bustModule("college");
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Not found or could not be deleted" }, { status: 404 });

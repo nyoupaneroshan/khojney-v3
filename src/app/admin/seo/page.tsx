@@ -8,22 +8,36 @@ export const dynamic = "force-dynamic";
 /**
  * SEO admin dashboard.
  *
- * Note: the previous version queried non-existent `seoTitle` / `seoContent`
- * columns on the Exam model. Those columns don't exist in the schema, so the
- * queries silently failed with `.catch(() => 0)` and the score was deflated.
- * This version uses only valid metrics — blog meta-tag coverage — and a
- * constant checklist of implemented SEO features.
+ * Shows coverage metrics for blog meta tags + exam SEO fields.
+ * Score is a weighted average across the two content types.
  */
 export default async function SEOAdminPage() {
-  const [totalBlogs, blogsWithMeta] = await Promise.all([
+  const [
+    totalBlogs,
+    blogsWithMeta,
+    totalExams,
+    examsWithSeoTitle,
+    examsWithSeoContent,
+  ] = await Promise.all([
     db.blogPost.count({ where: { status: "PUBLISHED" } }),
     db.blogPost.count({ where: { status: "PUBLISHED", metaTitle: { not: null } } }),
+    // Top-level published exams only (exclude child sets).
+    db.exam.count({ where: { isPublished: true, parentId: null } }),
+    db.exam.count({ where: { isPublished: true, parentId: null, seoTitle: { not: null } } }),
+    db.exam.count({ where: { isPublished: true, parentId: null, seoContent: { not: null } } }),
   ]);
+
   const blogMetaCoverage = Math.round(
     (blogsWithMeta / Math.max(totalBlogs, 1)) * 100
   );
+  const examSeoTitleCoverage = Math.round(
+    (examsWithSeoTitle / Math.max(totalExams, 1)) * 100
+  );
+  const examSeoContentCoverage = Math.round(
+    (examsWithSeoContent / Math.max(totalExams, 1)) * 100
+  );
 
-  // SEO score: 50% from blog meta coverage + 50% from implemented features.
+  // Score: 30% exam SEO title, 20% exam SEO content, 20% blog meta, 30% features.
   const features = [
     "XML sitemap",
     "robots.txt",
@@ -38,8 +52,11 @@ export default async function SEOAdminPage() {
     "Mobile-first responsive",
     "ISR caching",
   ];
-  const featuresScore = Math.round((features.length / 12) * 50);
-  const score = Math.min(100, Math.round(blogMetaCoverage / 2) + featuresScore);
+  const featuresScore = Math.round((features.length / 12) * 30);
+  const contentScore = Math.round(
+    (examSeoTitleCoverage * 0.3 + examSeoContentCoverage * 0.2 + blogMetaCoverage * 0.2) * 0.7
+  );
+  const score = Math.min(100, contentScore + featuresScore);
 
   return (
     <div>
@@ -66,6 +83,26 @@ export default async function SEOAdminPage() {
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-3 mb-6">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-xl font-bold">
+              {examsWithSeoTitle}/{totalExams}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Exams with SEO title ({examSeoTitleCoverage}%)
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <div className="text-xl font-bold">
+              {examsWithSeoContent}/{totalExams}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Exams with SEO content ({examSeoContentCoverage}%)
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="pt-4">
             <div className="text-xl font-bold">
