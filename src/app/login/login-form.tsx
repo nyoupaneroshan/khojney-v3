@@ -126,12 +126,7 @@ export default function LoginForm() {
     }
   };
 
-  const quickLogin = (email: string) => {
-    setLoginEmail(email);
-    setLoginPassword("demo1234");
-    setMode("login");
-  };
-
+   
   return (
     <AppShell user={null}>
       <div className="container-app py-8 md:py-12">
@@ -222,32 +217,7 @@ export default function LoginForm() {
                       </Button>
                     </form>
 
-                    <div className="mt-6 pt-6 border-t">
-                      <p className="text-xs font-medium text-muted-foreground mb-2 text-center">
-                        Quick demo login
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => quickLogin("admin@khojney.com")}
-                        >
-                          <UserIcon className="h-3.5 w-3.5" /> Admin
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => quickLogin("user@khojney.com")}
-                        >
-                          <UserIcon className="h-3.5 w-3.5" /> User
-                        </Button>
-                      </div>
-                      <p className="mt-2 text-xs text-muted-foreground text-center">
-                        Any password works for demo accounts.
-                      </p>
-                    </div>
+                     
                   </CardContent>
                 </Card>
               </TabsContent>
