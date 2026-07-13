@@ -8,10 +8,13 @@ import { env } from "@/lib/env";
  * Redirects the user to Google's consent screen.
  * After consent, Google redirects to /api/auth/google/callback.
  */
+
 export async function GET(req: NextRequest) {
   const clientId = env.GOOGLE_CLIENT_ID;
   const clientSecret = env.GOOGLE_CLIENT_SECRET;
-  const redirectBase = env.GOOGLE_REDIRECT_BASE;
+  // Auto-detect redirect base from the request origin
+  const url = new URL(req.url);
+  const redirectBase = env.GOOGLE_REDIRECT_BASE || `${url.protocol}//${url.host}`;
 
   // If Google OAuth is not configured, redirect to login with an error message
   if (!clientId || !clientSecret || clientId === "your-google-client-id-here") {
