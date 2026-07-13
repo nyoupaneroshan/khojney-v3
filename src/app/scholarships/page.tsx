@@ -18,17 +18,20 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { formatDate, daysUntil } from "@/components/khojney/format";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
+import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
 const BASE_PATH = "/scholarships";
 const PAGE_SIZE = 12;
 
-export const metadata: Metadata = {
-  title: "Scholarships in Nepal & Abroad",
+export const metadata: Metadata = buildMetadata({
+  title: "Scholarships in Nepal & Abroad 2025 — Free Seats, SEE Toppers, UG & PG",
   description:
-    "Discover scholarships for Nepali students — school, +2, bachelors, masters, and PhD. Filter by level, field, country, and deadline.",
-  alternates: { canonical: BASE_PATH },
-};
+    "Discover scholarships for Nepali students — school, +2, bachelors, masters, and PhD. Filter by level, field, country, and deadline. Find free seats and merit scholarships.",
+  canonical: BASE_PATH,
+  keywords: [...MODULE_KEYWORDS.scholarships],
+});
 
 const SORT_OPTIONS = [
   { label: "Deadline (soonest first)", value: "deadline" },
@@ -258,6 +261,7 @@ export default async function ScholarshipsListPage({
           </div>
         </div>
       </section>
+      <CrossLinkFooter module="scholarships" />
     </AppShell>
   );
 }

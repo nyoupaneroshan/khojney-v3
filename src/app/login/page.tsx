@@ -263,6 +263,15 @@ function LoginForm() {
                         </div>
                       </div>
 
+                      <div className="flex justify-end">
+                        <Link
+                          href={`/forgot-password${loginEmail ? `?email=${encodeURIComponent(loginEmail)}` : ""}`}
+                          className="text-xs text-primary font-medium hover:underline"
+                        >
+                          Forgot password?
+                        </Link>
+                      </div>
+
                       <Button type="submit" disabled={loading} className="w-full">
                         {loading ? (
                           <>

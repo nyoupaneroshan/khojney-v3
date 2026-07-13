@@ -26,17 +26,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
+import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
 const BASE_PATH = "/banks";
 const PAGE_SIZE = 12;
 
-export const metadata: Metadata = {
-  title: "Banks of Nepal",
+export const metadata: Metadata = buildMetadata({
+  title: "Banks in Nepal 2025 — Compare Interest Rates, Branches & Mobile Banking",
   description:
     "Explore commercial, development, finance, and microfinance banks of Nepal. Compare savings & fixed deposit rates, branch/ATM networks, mobile & internet banking, and more.",
-  alternates: { canonical: BASE_PATH },
-};
+  canonical: BASE_PATH,
+  keywords: [...MODULE_KEYWORDS.banks],
+});
 
 const SORT_OPTIONS = [
   { label: "Highest rated", value: "rating" },
@@ -290,6 +293,7 @@ export default async function BanksListPage({
           </div>
         </div>
       </section>
+      <CrossLinkFooter module="banks" />
     </AppShell>
   );
 }

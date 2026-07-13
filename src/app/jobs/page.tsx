@@ -28,18 +28,21 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { parseJsonArray, formatDate, daysUntil } from "@/components/khojney/format";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
+import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 import { formatSalary } from "@/lib/job-utils";
 
 export const revalidate = 3600;
 const BASE_PATH = "/jobs";
 const PAGE_SIZE = 12;
 
-export const metadata: Metadata = {
-  title: "Jobs in Nepal",
+export const metadata: Metadata = buildMetadata({
+  title: "Jobs in Nepal 2025 — Latest Job Vacancies, IT, Government & NGO Jobs",
   description:
     "Browse the latest job openings in Nepal — full-time, part-time, contract, internship, and remote roles across IT, finance, marketing, engineering, healthcare, education, and more.",
-  alternates: { canonical: BASE_PATH },
-};
+  canonical: BASE_PATH,
+  keywords: [...MODULE_KEYWORDS.jobs],
+});
 
 const SORT_OPTIONS = [
   { label: "Newest first", value: "newest" },
@@ -344,6 +347,7 @@ export default async function JobsListPage({
           </div>
         </div>
       </section>
+      <CrossLinkFooter module="jobs" />
     </AppShell>
   );
 }

@@ -20,17 +20,20 @@ import {
   getGovCategoryStyle,
 } from "@/lib/government-categories";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
+import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
 const BASE_PATH = "/government";
 const PAGE_SIZE = 12;
 
-export const metadata: Metadata = {
-  title: "Government Services in Nepal",
+export const metadata: Metadata = buildMetadata({
+  title: "Government Services in Nepal 2025 — Citizenship, Passport, PAN, License Guide",
   description:
     "Step-by-step guides for Nepali government services — citizenship, passport, PAN/VAT, driving license, land registration, vehicle registration, tax filing and more.",
-  alternates: { canonical: BASE_PATH },
-};
+  canonical: BASE_PATH,
+  keywords: [...MODULE_KEYWORDS.government],
+});
 
 const SORT_OPTIONS = [
   { label: "Newest first", value: "newest" },
@@ -235,6 +238,7 @@ export default async function GovernmentListPage({
           </div>
         </div>
       </section>
+      <CrossLinkFooter module="government" />
     </AppShell>
   );
 }

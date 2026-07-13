@@ -20,17 +20,20 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { NEPAL_PROVINCES, NEPAL_DISTRICTS } from "@/lib/constants";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
+import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
 const BASE_PATH = "/schools";
 const PAGE_SIZE = 12;
 
-export const metadata: Metadata = {
-  title: "Schools in Nepal",
+export const metadata: Metadata = buildMetadata({
+  title: "Schools in Nepal 2025 — Best Primary, Secondary & Higher Secondary Schools",
   description:
-    "Browse primary, secondary, and higher-secondary schools in Nepal. Filter by level, province, district, affiliation, and rating.",
-  alternates: { canonical: BASE_PATH },
-};
+    "Browse primary, secondary, and higher-secondary schools in Nepal. Filter by level, province, district, affiliation, and rating. Find the best school for your child.",
+  canonical: BASE_PATH,
+  keywords: [...MODULE_KEYWORDS.schools],
+});
 
 const SORT_OPTIONS = [
   { label: "Highest rated", value: "rating" },
@@ -290,6 +293,7 @@ export default async function SchoolsListPage({
           </div>
         </div>
       </section>
+      <CrossLinkFooter module="schools" />
     </AppShell>
   );
 }

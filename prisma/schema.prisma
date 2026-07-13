@@ -8,7 +8,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
   url      = env("DATABASE_URL")
 }
 
@@ -29,8 +28,6 @@ model User {
   isActive      Boolean  @default(true) // false = deactivated; cannot log in
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-    order   Int @default(0)
-
 
   examAttempts   ExamAttempt[]
   bookmarks      Bookmark[]
@@ -84,6 +81,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+/// Password reset tokens issued by /api/auth/forgot-password.
+/// Consumed by /api/auth/reset-password. Single-use, 1-hour expiry.
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  email      String   // lowercase user email
+  token      String   @unique // random hex token
+  expires    DateTime // 1 hour from issue
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+  @@index([token, expires])
 }
 
 // ============================================================

@@ -41,12 +41,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=state_mismatch", req.url));
   }
 
-const clientId = env.GOOGLE_CLIENT_ID;
-const clientSecret = env.GOOGLE_CLIENT_SECRET;
-// Use the same redirect base that was used for the initial request
-const url = new URL(req.url);
-const redirectBase = env.GOOGLE_REDIRECT_BASE || `${url.protocol}//${url.host}`;
-const redirectUri = `${redirectBase}/api/auth/google/callback`;
+  const clientId = env.GOOGLE_CLIENT_ID;
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectBase = env.GOOGLE_REDIRECT_BASE;
+  const redirectUri = `${redirectBase}/api/auth/google/callback`;
 
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(new URL("/login?error=google_not_configured", req.url));

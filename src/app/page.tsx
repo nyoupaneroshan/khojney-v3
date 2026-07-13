@@ -74,6 +74,40 @@ export default async function HomePage() {
     <AppShell user={user}>
       <HomeHero trending={trending} />
       <StatsRow stats={statsProps} />
+
+      {/* Quick Start — one-click access to top mock tests */}
+      <section className="py-10 bg-muted/30">
+        <div className="container-app">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold tracking-tight">Quick Start — Free Mock Tests</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Start practicing immediately — no signup required.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[
+              { label: "IOE Mock Test", href: "/mock-exams/engineering-entrance-parent/ioe-entrance", emoji: "⚙️" },
+              { label: "CEE / MBBS", href: "/mock-exams/medical-entrance-parent/mbbs-cee", emoji: "⚕️" },
+              { label: "CMAT Mock", href: "/mock-exams/management-entrance-parent/cmat-full", emoji: "📊" },
+              { label: "Loksewa", href: "/mock-exams/loksewa/loksewa-kharidar", emoji: "🏛️" },
+              { label: "Driving License", href: "/mock-exams/driving-license/driving-license-parent", emoji: "🚗" },
+              { label: "All Exams", href: "/mock-exams", emoji: "📚" },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-4 text-center transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5"
+              >
+                <span className="text-2xl">{item.emoji}</span>
+                <span className="text-xs font-medium text-foreground group-hover:text-primary">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <CategoryGrid />
       <FeaturedExams exams={featuredExams} />
       <FeaturedColleges colleges={featuredColleges} />

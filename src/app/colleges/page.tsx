@@ -20,17 +20,20 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { NEPAL_PROVINCES, NEPAL_DISTRICTS } from "@/lib/constants";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
+import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
 const BASE_PATH = "/colleges";
 const PAGE_SIZE = 12;
 
-export const metadata: Metadata = {
-  title: "Colleges in Nepal",
+export const metadata: Metadata = buildMetadata({
+  title: "Colleges in Nepal 2025 — Best Engineering, Medical, IT & Management Colleges",
   description:
-    "Browse and compare top colleges in Nepal — engineering, medical, management, science, and more. Filter by province, district, affiliation, type, and rating.",
-  alternates: { canonical: BASE_PATH },
-};
+    "Browse and compare top colleges in Nepal — engineering, medical, management, science, IT, and more. Filter by province, district, affiliation, type, and rating. Find the best college for you.",
+  canonical: BASE_PATH,
+  keywords: [...MODULE_KEYWORDS.colleges],
+});
 
 const SORT_OPTIONS = [
   { label: "Highest rated", value: "rating" },
@@ -292,6 +295,7 @@ export default async function CollegesListPage({
           </div>
         </div>
       </section>
+      <CrossLinkFooter module="colleges" />
     </AppShell>
   );
 }
