@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       type: "article",
       url: `/blog/${slug}`,
       images: post.coverImage ? [{ url: post.coverImage }] : undefined,
-      publishedTime: post.publishedAt.toISOString(),
+      publishedTime: new Date(post.publishedAt).toISOString(),
       authors: post.author?.name ? [post.author.name] : undefined,
     },
     twitter: {
@@ -92,8 +92,8 @@ export default async function BlogDetailPage({ params }: Params) {
     headline: post.title,
     description: post.excerpt ?? post.metaDescription ?? undefined,
     image: post.coverImage ?? undefined,
-    datePublished: post.publishedAt.toISOString(),
-    dateModified: post.updatedAt.toISOString(),
+    datePublished: new Date(post.publishedAt).toISOString(),
+dateModified: new Date(post.updatedAt).toISOString(),
     author: post.author?.name
       ? { "@type": "Person", name: post.author.name }
       : undefined,
