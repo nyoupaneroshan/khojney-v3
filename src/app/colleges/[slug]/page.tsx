@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
+import { getCachedCollegeBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { AvatarInitial } from "@/components/khojney/avatar-initial";
@@ -46,19 +47,8 @@ interface Params {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const college = await db.college.findUnique({
-    where: { slug },
-    select: {
-      name: true,
-      description: true,
-      city: true,
-      district: true,
-      province: true,
-      affiliation: true,
-      type: true,
-      coverImage: true,
-    },
-  });
+  // Use cached query — no DB hit on cache hit.
+  const college = await getCachedCollegeBySlug(slug);
   if (!college) {
     return { title: "College not found" };
   }
@@ -84,14 +74,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600; // ISR: 1 hour
+
 export default async function CollegeDetailPage({ params }: Params) {
   const { slug } = await params;
   const user = await getSession();
 
-  const college = await db.college.findUnique({
-    where: { slug },
-    include: { category: true },
-  });
+  // Use cached query — no DB hit on cache hit (1 hour TTL).
+  const college = await getCachedCollegeBySlug(slug);
 
   if (!college || !college.isPublished) notFound();
 

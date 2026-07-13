@@ -8,6 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  
   url      = env("DATABASE_URL")
 }
 
@@ -207,6 +208,21 @@ model Exam {
   seoDescription  String?
   seoContent      String? // long-form markdown for SEO landing pages
   keywords        String? // comma-separated keywords for meta tags
+  canonicalUrl    String? // custom canonical URL
+  // ── Landing page content (managed by admin) ──
+  featuredImage   String?  // hero/OG image URL
+  heroTitle       String?  // overrides `title` on the landing page H1
+  heroDescription String?  // short subtitle below H1
+  benefits        String?  // JSON array of strings: ["Real exam simulation", ...]
+  instructions    String?  // exam instructions shown before starting
+  faqs            String?  // JSON array of {question, answer}
+  ctaText         String?  // custom CTA button text (default: "Start Free Mock Exam")
+  relatedResources String? // JSON array of {title, url}
+  // ── Exam scoring ──
+  negativeMarking     Boolean @default(false)
+  negativeMarkValue   Float  @default(0) // marks deducted per wrong answer (e.g. 0.25)
+  // ── Admin ordering ──
+  order          Int      @default(0) // manual sort order in admin + landing pages
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -216,6 +232,8 @@ model Exam {
 
   @@index([parentId])
   @@index([isParent, isPublished])
+  @@index([categoryId, isPublished, order])
+  @@index([slug, isPublished])
 }
 
 model ExamQuestion {

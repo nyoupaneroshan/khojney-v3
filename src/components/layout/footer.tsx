@@ -17,16 +17,16 @@ export function Footer() {
               Everything about Nepal, in one place. Prepare for exams, discover colleges, find scholarships, banks, jobs, and government services.
             </p>
             <div className="mt-4 flex items-center gap-3">
-              <a href="https://www.facebook.com/people/Khojney/61564186722886/" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="#" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="https://x.com/khojney" aria-label="Twitter" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-primary transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="https://www.youtube.com/@khojney" aria-label="Youtube" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="#" aria-label="Youtube" className="text-muted-foreground hover:text-primary transition-colors">
                 <Youtube className="h-5 w-5" />
               </a>
-              <a href="https://www.instagram.com/khojneynepal/" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="#" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
             </div>

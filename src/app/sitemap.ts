@@ -8,6 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = "https://khojney.com";
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/`, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
+    { url: `${base}/mock-exams`, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
     { url: `${base}/exams`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/colleges`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/schools`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
@@ -24,8 +25,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/login`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.4 },
   ];
 
-  const [exams, colleges, schools, universities, scholarships, posts, banks, jobs, govtServices] = await Promise.all([
-    db.exam.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
+  const [exams, examCategories, colleges, schools, universities, scholarships, posts, banks, jobs, govtServices] = await Promise.all([
+    db.exam.findMany({
+      where: { isPublished: true, parentId: null },
+      select: { slug: true, updatedAt: true, categoryId: true, category: { select: { slug: true } } },
+    }),
+    db.category.findMany({
+      where: { module: "EXAM" },
+      select: { slug: true, updatedAt: true },
+    }),
     db.college.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     db.school.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     db.university.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
@@ -37,6 +45,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   const dynamic: MetadataRoute.Sitemap = [
+    // Mock exam category landing pages: /mock-exams/[category]
+    ...examCategories.map((c) => ({
+      url: `${base}/mock-exams/${c.slug}`,
+      lastModified: c.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    })),
+    // Mock exam detail pages: /mock-exams/[category]/[exam]
+    ...exams
+      .filter((e) => e.category?.slug)
+      .map((e) => ({
+        url: `${base}/mock-exams/${e.category!.slug}/${e.slug}`,
+        lastModified: e.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.9,
+      })),
+    // Legacy exam pages (still valid)
     ...exams.map((e) => ({ url: `${base}/exams/${e.slug}`, lastModified: e.updatedAt, changeFrequency: "weekly" as const, priority: 0.7 })),
     ...colleges.map((c) => ({ url: `${base}/colleges/${c.slug}`, lastModified: c.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
     ...schools.map((s) => ({ url: `${base}/schools/${s.slug}`, lastModified: s.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),

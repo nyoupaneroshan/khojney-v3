@@ -87,42 +87,33 @@ export function bustHomepageStats() {
 export function bustModule(module: string) {
   switch (module.toLowerCase()) {
     case "exam":
-      bustFeaturedExams();
-      bustHomepageStats();
+      bustExam();
       break;
     case "college":
-      bustFeaturedColleges();
-      bustHomepageStats();
+      bustCollege();
       break;
     case "school":
-      bustFeaturedSchools();
-      bustHomepageStats();
+      bustSchool();
       break;
     case "university":
-      bustFeaturedUniversities();
-      bustHomepageStats();
+      bustUniversity();
       break;
     case "scholarship":
-      bustFeaturedScholarships();
-      bustHomepageStats();
+      bustScholarship();
       break;
     case "bank":
-      bustFeaturedBanks();
-      bustHomepageStats();
+      bustBank();
       break;
     case "job":
-      bustFeaturedJobs();
-      bustHomepageStats();
+      bustJob();
       break;
     case "government":
     case "government_service":
-      bustFeaturedGovernment();
-      bustHomepageStats();
+      bustGovernmentService();
       break;
     case "blog":
     case "post":
-      bustFeaturedBlog();
-      bustHomepageStats();
+      bustBlogPost();
       break;
     case "category":
       bustCategories();
@@ -137,4 +128,74 @@ export function bustModule(module: string) {
       // Unknown module — bust homepage stats as a safe default.
       bustHomepageStats();
   }
+}
+
+// ── Per-entity cache busting ─────────────────────────────────────────
+// These bust a single entity's cache by revalidating the slug-scoped tag.
+// Call after admin updates/deletes a specific entity.
+
+/** Bust the cache for a single exam (by slug) + all exam-related caches. */
+export function bustExam(slug?: string) {
+  revalidateTag("exam-by-slug", PROFILE);
+  revalidateTag("exam-landing", PROFILE);
+  revalidateTag("exam-children", PROFILE);
+  revalidateTag("related-exams", PROFILE);
+  bustFeaturedExams();
+  bustHomepageStats();
+}
+
+/** Bust the cache for a single college. */
+export function bustCollege(slug?: string) {
+  revalidateTag("college-by-slug", PROFILE);
+  bustFeaturedColleges();
+  bustHomepageStats();
+}
+
+/** Bust the cache for a single school. */
+export function bustSchool(slug?: string) {
+  revalidateTag("school-by-slug", PROFILE);
+  bustFeaturedSchools();
+  bustHomepageStats();
+}
+
+/** Bust the cache for a single university. */
+export function bustUniversity(slug?: string) {
+  revalidateTag("university-by-slug", PROFILE);
+  bustFeaturedUniversities();
+  bustHomepageStats();
+}
+
+/** Bust the cache for a single bank. */
+export function bustBank(slug?: string) {
+  revalidateTag("bank-by-slug", PROFILE);
+  bustFeaturedBanks();
+  bustHomepageStats();
+}
+
+/** Bust the cache for a single scholarship. */
+export function bustScholarship(slug?: string) {
+  revalidateTag("scholarship-by-slug", PROFILE);
+  bustFeaturedScholarships();
+  bustHomepageStats();
+}
+
+/** Bust the cache for a single job. */
+export function bustJob(slug?: string) {
+  revalidateTag("job-by-slug", PROFILE);
+  bustFeaturedJobs();
+  bustHomepageStats();
+}
+
+/** Bust the cache for a single government service. */
+export function bustGovernmentService(slug?: string) {
+  revalidateTag("govt-by-slug", PROFILE);
+  bustFeaturedGovernment();
+  bustHomepageStats();
+}
+
+/** Bust the cache for a single blog post. */
+export function bustBlogPost(slug?: string) {
+  revalidateTag("blog-by-slug", PROFILE);
+  bustFeaturedBlog();
+  bustHomepageStats();
 }

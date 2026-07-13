@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/app/api/admin/_lib/require-admin";
 import { parsePagination, slugify } from "@/lib/admin-utils";
+import { bustModule } from "@/lib/cache-bust";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,12 @@ export async function GET(req: NextRequest) {
   const [items, total] = await Promise.all([
     db.exam.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
       skip,
       take: pageSize,
       include: {
-        category: { select: { id: true, name: true } },
-        _count: { select: { questions: true, attempts: true } },
+        category: { select: { id: true, name: true, slug: true } },
+        _count: { select: { questions: true, attempts: true, children: true } },
       },
     }),
     db.exam.count({ where }),
@@ -65,10 +66,32 @@ export async function POST(req: NextRequest) {
       difficulty: body.difficulty ?? "MEDIUM",
       isFeatured: Boolean(body.isFeatured),
       isPublished: body.isPublished !== false,
+      isParent: Boolean(body.isParent),
       tags: body.tags ?? null,
       coverImage: body.coverImage ?? null,
+      order: body.order != null ? Number(body.order) : 0,
+      // SEO fields
+      seoTitle: body.seoTitle || null,
+      seoDescription: body.seoDescription || null,
+      seoContent: body.seoContent || null,
+      keywords: body.keywords || null,
+      canonicalUrl: body.canonicalUrl || null,
+      // Landing page content
+      featuredImage: body.featuredImage || null,
+      heroTitle: body.heroTitle || null,
+      heroDescription: body.heroDescription || null,
+      benefits: body.benefits || null,
+      instructions: body.instructions || null,
+      faqs: body.faqs || null,
+      ctaText: body.ctaText || null,
+      relatedResources: body.relatedResources || null,
+      // Scoring
+      negativeMarking: Boolean(body.negativeMarking),
+      negativeMarkValue: body.negativeMarkValue != null ? Number(body.negativeMarkValue) : 0,
     },
   });
+
+  bustModule("exam");
 
   return NextResponse.json(exam, { status: 201 });
 }
