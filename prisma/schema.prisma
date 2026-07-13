@@ -29,6 +29,8 @@ model User {
   isActive      Boolean  @default(true) // false = deactivated; cannot log in
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+    order   Int @default(0)
+
 
   examAttempts   ExamAttempt[]
   bookmarks      Bookmark[]
