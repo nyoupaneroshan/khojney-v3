@@ -22,11 +22,11 @@ function required(name: string): string {
 
 export const env = {
   DATABASE_URL: process.env.DATABASE_URL ?? "file:./dev.db",
-  SESSION_SECRET: required("SESSION_SECRET"),
+  SESSION_SECRET: process.env.SESSION_SECRET ?? "dev_fallback_secret_change_in_production",
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ?? "",
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ?? "",
   GOOGLE_REDIRECT_BASE:
-    process.env.GOOGLE_REDIRECT_BASE ?? "http://localhost:3000",
+    process.env.GOOGLE_REDIRECT_BASE ?? "https://khojney.com",
   NEXT_PUBLIC_ADSENSE_CLIENT: process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "",
   NODE_ENV: process.env.NODE_ENV ?? "development",
   isProd: process.env.NODE_ENV === "production",
