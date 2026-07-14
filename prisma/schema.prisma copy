@@ -1,0 +1,643 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String?
+  passwordHash       String?
+  image              String?
+  role               String              @default("USER")
+  phone              String?
+  bio                String?
+  location           String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  isActive           Boolean             @default(true)
+  accounts           Account[]
+  aiChatSessions     AiChatSession[]
+  posts              BlogPost[]          @relation("PostAuthor")
+  bookmarks          Bookmark[]
+  comments           Comment[]           @relation("CommentAuthor")
+  communityQuestions CommunityQuestion[] @relation("CommunityQuestionSubmitter")
+  examAttempts       ExamAttempt[]
+  guestPosts         GuestPost[]         @relation("GuestPostAuthor")
+  notifications      Notification[]
+  reviews            Review[]
+  searchHistory      SearchHistory[]
+  sessions           Session[]
+
+  @@index([role])
+  @@index([isActive])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// Module-agnostic categories. Each module can attach to a category via the categoryId FK.
+model Category {
+  id                 String              @id @default(cuid())
+  slug               String              @unique
+  name               String
+  description        String?
+  icon               String?
+  color              String?
+  parentId           String?
+  module             String?
+  order              Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  posts              BlogPost[]
+  parent             Category?           @relation("CategoryTree", fields: [parentId], references: [id])
+  children           Category[]          @relation("CategoryTree")
+  colleges           College[]
+  communityQuestions CommunityQuestion[]
+  exams              Exam[]
+  guestPosts         GuestPost[]
+  scholarships       Scholarship[]
+  schools            School[]
+}
+
+model Tag {
+  id        String     @id @default(cuid())
+  slug      String     @unique
+  name      String
+  createdAt DateTime   @default(now())
+  posts     BlogPost[] @relation("BlogPostToTag")
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  entity    String
+  entityId  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entity, entityId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("INFO")
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+}
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String?
+  query     String
+  module    String?
+  results   Int?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  entity    String
+  entityId  String
+  rating    Int
+  title     String?
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entity, entityId])
+}
+
+model Exam {
+  id                 String              @id @default(cuid())
+  slug               String              @unique
+  title              String
+  description        String
+  categoryId         String?
+  examType           String
+  durationMin        Int
+  totalMarks         Int
+  passingMarks       Int?
+  difficulty         String              @default("MEDIUM")
+  isPublished        Boolean             @default(true)
+  isFeatured         Boolean             @default(false)
+  tags               String?
+  coverImage         String?
+  parentId           String?
+  isParent           Boolean             @default(false)
+  shuffleQuestions   Boolean             @default(true)
+  shuffleOptions     Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  keywords           String?
+  seoContent         String?
+  seoDescription     String?
+  seoTitle           String?
+  canonicalUrl       String?
+  featuredImage      String?
+  heroTitle          String?
+  heroDescription    String?
+  benefits           String?
+  instructions       String?
+  faqs               String?
+  ctaText            String?
+  relatedResources   String?
+  negativeMarkValue  Float               @default(0)
+  negativeMarking    Boolean             @default(false)
+  order              Int                 @default(0)
+  communityQuestions CommunityQuestion[]
+  category           Category?           @relation(fields: [categoryId], references: [id])
+  parent             Exam?               @relation("ExamTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children           Exam[]              @relation("ExamTree")
+  attempts           ExamAttempt[]
+  questions          ExamQuestion[]
+
+  @@index([parentId])
+  @@index([isParent, isPublished])
+  @@index([categoryId, isPublished, order])
+  @@index([slug, isPublished])
+}
+
+model ExamQuestion {
+  id          String  @id @default(cuid())
+  examId      String
+  type        String  @default("MCQ")
+  question    String
+  options     String
+  correctIdx  Int
+  explanation String?
+  marks       Int     @default(1)
+  order       Int     @default(0)
+  exam        Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@index([examId, order])
+}
+
+model ExamAttempt {
+  id           String    @id @default(cuid())
+  userId       String
+  examId       String
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  score        Int       @default(0)
+  totalMarks   Int
+  correctCount Int       @default(0)
+  wrongCount   Int       @default(0)
+  durationSec  Int?
+  answers      String?
+  rank         Int?
+  exam         Exam      @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([examId, score])
+  @@index([userId, finishedAt])
+  @@index([userId])
+}
+
+model College {
+  id                    String    @id @default(cuid())
+  slug                  String    @unique
+  name                  String
+  description           String
+  categoryId            String?
+  province              String?
+  district              String?
+  city                  String?
+  address               String?
+  latitude              Float?
+  longitude             Float?
+  affiliation           String?
+  type                  String    @default("PRIVATE")
+  establishedYear       Int?
+  phone                 String?
+  email                 String?
+  website               String?
+  logo                  String?
+  coverImage            String?
+  gallery               String?
+  programs              String?
+  facilities            String?
+  admissionProcess      String?
+  feesRange             String?
+  scholarshipsAvailable Boolean   @default(false)
+  rating                Float     @default(0)
+  reviewCount           Int       @default(0)
+  isFeatured            Boolean   @default(false)
+  isVerified            Boolean   @default(false)
+  isPublished           Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  category              Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([isPublished, isFeatured, rating])
+  @@index([province])
+  @@index([categoryId])
+}
+
+model School {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  name             String
+  description      String
+  categoryId       String?
+  province         String?
+  district         String?
+  city             String?
+  address          String?
+  latitude         Float?
+  longitude        Float?
+  level            String?
+  type             String    @default("PRIVATE")
+  affiliation      String?
+  establishedYear  Int?
+  phone            String?
+  email            String?
+  website          String?
+  logo             String?
+  coverImage       String?
+  gallery          String?
+  facilities       String?
+  programs         String?
+  feesRange        String?
+  admissionProcess String?
+  rating           Float     @default(0)
+  reviewCount      Int       @default(0)
+  isFeatured       Boolean   @default(false)
+  isVerified       Boolean   @default(false)
+  isPublished      Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  category         Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([isPublished, isFeatured, rating])
+  @@index([province])
+  @@index([categoryId])
+}
+
+model University {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  description      String
+  establishedYear  Int?
+  province         String?
+  city             String?
+  address          String?
+  phone            String?
+  email            String?
+  website          String?
+  logo             String?
+  coverImage       String?
+  type             String   @default("PUBLIC")
+  ranking          Int?
+  totalCampuses    Int      @default(0)
+  totalStudents    Int?
+  programs         String?
+  faculties        String?
+  admissionProcess String?
+  notices          String?
+  results          String?
+  rating           Float    @default(0)
+  reviewCount      Int      @default(0)
+  isFeatured       Boolean  @default(false)
+  isPublished      Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([isPublished, isFeatured, rating])
+  @@index([city])
+}
+
+model Scholarship {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  title           String
+  description     String
+  provider        String?
+  providerUrl     String?
+  categoryId      String?
+  level           String?
+  field           String?
+  amount          String?
+  eligibility     String?
+  deadline        DateTime?
+  applicationOpen DateTime?
+  applicationUrl  String?
+  country         String    @default("Nepal")
+  province        String?
+  isFeatured      Boolean   @default(false)
+  isPublished     Boolean   @default(true)
+  coverImage      String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  category        Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([isPublished, deadline])
+  @@index([isPublished, isFeatured])
+  @@index([categoryId])
+}
+
+model BlogPost {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  title           String
+  excerpt         String?
+  content         String
+  coverImage      String?
+  categoryId      String?
+  authorId        String?
+  status          String    @default("PUBLISHED")
+  featured        Boolean   @default(false)
+  views           Int       @default(0)
+  readTimeMin     Int       @default(5)
+  metaTitle       String?
+  metaDescription String?
+  publishedAt     DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  author          User?     @relation("PostAuthor", fields: [authorId], references: [id])
+  category        Category? @relation(fields: [categoryId], references: [id])
+  tags            Tag[]     @relation("BlogPostToTag")
+
+  @@index([status, publishedAt])
+  @@index([slug])
+}
+
+model TrendingSearch {
+  id        String   @id @default(cuid())
+  query     String   @unique
+  count     Int      @default(0)
+  module    String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Bank {
+  id                  String   @id @default(cuid())
+  slug                String   @unique
+  name                String
+  shortName           String
+  description         String
+  type                String   @default("COMMERCIAL")
+  establishedYear     Int?
+  headquarters        String?
+  website             String?
+  phone               String?
+  email               String?
+  logo                String?
+  swiftCode           String?
+  savingsRateMin      Float?
+  savingsRateMax      Float?
+  fixedDepositRateMin Float?
+  fixedDepositRateMax Float?
+  branchCount         Int?
+  atmCount            Int?
+  mobileBanking       Boolean  @default(false)
+  internetBanking     Boolean  @default(false)
+  cards               String?
+  loans               String?
+  rating              Float    @default(0)
+  reviewCount         Int      @default(0)
+  isFeatured          Boolean  @default(false)
+  isPublished         Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([isPublished, isFeatured, rating])
+  @@index([type])
+}
+
+model Job {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  title            String
+  description      String
+  company          String
+  companyLogo      String?
+  location         String?
+  jobType          String    @default("FULL_TIME")
+  category         String?
+  experienceLevel  String    @default("ENTRY")
+  salaryMin        Int?
+  salaryMax        Int?
+  salaryCurrency   String    @default("NPR")
+  applicationUrl   String?
+  applicationEmail String?
+  deadline         DateTime?
+  skills           String?
+  qualifications   String?
+  views            Int       @default(0)
+  isFeatured       Boolean   @default(false)
+  isPublished      Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([jobType, isPublished])
+  @@index([category, isPublished])
+}
+
+model GovernmentService {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  title             String
+  description       String
+  category          String   @default("CITIZENSHIP")
+  ministry          String?
+  department        String?
+  office            String?
+  applicationUrl    String?
+  applicationFee    String?
+  processingTime    String?
+  requiredDocuments String?
+  steps             String?
+  contactPhone      String?
+  contactEmail      String?
+  views             Int      @default(0)
+  isFeatured        Boolean  @default(false)
+  isPublished       Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([category, isPublished])
+}
+
+model Webhook {
+  id            String       @id @default(cuid())
+  name          String
+  url           String
+  events        String
+  secret        String?
+  isActive      Boolean      @default(true)
+  lastTriggered DateTime?
+  lastStatus    String?
+  lastResponse  String?
+  triggerCount  Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  logs          WebhookLog[]
+
+  @@index([isActive])
+}
+
+model WebhookLog {
+  id         String   @id @default(cuid())
+  webhookId  String
+  event      String
+  payload    String
+  statusCode Int?
+  response   String?
+  success    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  webhook    Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, createdAt])
+}
+
+model AiChatSession {
+  id           String          @id @default(cuid())
+  userId       String?
+  sessionUuid  String          @unique
+  title        String          @default("New Conversation")
+  messageCount Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  messages     AiChatMessage[]
+  user         User?           @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model AiChatMessage {
+  id         String        @id @default(cuid())
+  sessionId  String
+  role       String
+  content    String
+  tokensUsed Int?
+  createdAt  DateTime      @default(now())
+  session    AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+model GuestPost {
+  id         String    @id @default(cuid())
+  title      String
+  slug       String    @unique
+  excerpt    String?
+  content    String
+  coverImage String?
+  categoryId String?
+  authorId   String
+  authorName String
+  authorBio  String?
+  status     String    @default("PENDING")
+  adminNotes String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  views      Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  author     User      @relation("GuestPostAuthor", fields: [authorId], references: [id])
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([status, createdAt])
+}
+
+model CommunityQuestion {
+  id            String    @id @default(cuid())
+  question      String
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String
+  explanation   String?
+  examId        String?
+  categoryId    String?
+  submitterId   String
+  submitterName String
+  status        String    @default("PENDING")
+  adminNotes    String?
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  upvotes       Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  category      Category? @relation(fields: [categoryId], references: [id])
+  exam          Exam?     @relation(fields: [examId], references: [id])
+  submitter     User      @relation("CommunityQuestionSubmitter", fields: [submitterId], references: [id])
+
+  @@index([status, createdAt])
+}
+
+model Comment {
+  id        String    @id @default(cuid())
+  entity    String
+  entityId  String
+  userId    String
+  content   String
+  parentId  String?
+  isPinned  Boolean   @default(false)
+  isHidden  Boolean   @default(false)
+  upvotes   Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  parent    Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentThread")
+  user      User      @relation("CommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entity, entityId, createdAt])
+}
