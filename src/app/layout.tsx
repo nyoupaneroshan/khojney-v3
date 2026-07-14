@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script"; // <-- Import Script from next/script
 import { Inter, Poppins, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -82,6 +83,21 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${poppins.variable} ${notoDevanagari.variable} font-sans antialiased bg-background text-foreground`}
       >
+        {/* Google Analytics (gtag.js) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-2JG6G843MR"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-2JG6G843MR');
+          `}
+        </Script>
+
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
         </ThemeProvider>
