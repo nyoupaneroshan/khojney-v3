@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Script from "next/script"; // <-- Import Script from next/script
+import Script from "next/script";  
 import { Inter, Poppins, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
