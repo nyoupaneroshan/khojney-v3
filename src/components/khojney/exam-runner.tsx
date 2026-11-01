@@ -160,7 +160,7 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | null>>({});
-  const [timeLeft, setTimeLeft] = useState(exam.durationMin * 60);
+  const [timeLeft, setTimeLeft] = useState(Math.max(1, exam.durationMin) * 60);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -189,6 +189,10 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
 
   // Start attempt on mount
   useEffect(() => {
+    if (exam.questions.length === 0) {
+      setPhase("active");
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -214,7 +218,7 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
     return () => {
       cancelled = true;
     };
-  }, [exam.id]);
+  }, [exam.id, exam.questions.length]);
 
   // Countdown timer
   useEffect(() => {
@@ -388,6 +392,33 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
         }}
         onExit={() => router.push(`/exams/${exam.slug}`)}
       />
+    );
+  }
+
+  // -------- Empty questions state --------
+  if (totalQuestions === 0) {
+    return (
+      <div className="container-app py-16">
+        <Card className="max-w-md mx-auto text-center">
+          <CardHeader>
+            <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-2">
+              <ListChecks className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <CardTitle>No questions available</CardTitle>
+            <CardDescription>
+              This mock test does not have any questions available to take at this time.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="flex justify-center gap-2">
+            <Button asChild variant="default">
+              <Link href={`/exams/${exam.slug}`}>View Overview</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/exams">All Mock Tests</Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     );
   }
 

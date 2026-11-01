@@ -30,9 +30,38 @@ export default async function ExamTakePage({
     where: { slug, isPublished: true },
     include: {
       questions: { orderBy: { order: "asc" } },
+      children: {
+        where: { isPublished: true },
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        include: {
+          questions: { orderBy: { order: "asc" } },
+          children: {
+            where: { isPublished: true },
+            orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+            include: { questions: { orderBy: { order: "asc" } } },
+          },
+        },
+      },
     },
   });
   if (!exam) notFound();
+
+  // If this exam has no direct questions (e.g. parent / faculty container exam),
+  // automatically redirect to the first playable child mock test set!
+  if (exam.questions.length === 0) {
+    for (const child of exam.children) {
+      if (child.questions.length > 0) {
+        redirect(`/exams/${child.slug}/take`);
+      }
+      for (const grandchild of child.children) {
+        if (grandchild.questions.length > 0) {
+          redirect(`/exams/${grandchild.slug}/take`);
+        }
+      }
+    }
+    // If no playable questions exist anywhere in the hierarchy, redirect to overview
+    redirect(`/exams/${slug}`);
+  }
 
   // Map DB questions to client-safe shape (parse JSON options)
   const runnerExam: ExamRunnerExam = {
