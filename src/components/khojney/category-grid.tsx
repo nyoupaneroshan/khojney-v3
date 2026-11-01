@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   FileText, Landmark, Car, GraduationCap, Cog, Stethoscope, HeartPulse, BookOpen,
   School, Building2, University, Award, Newspaper, Users, Globe, Briefcase, Atom,
-  Laptop, Compass, Lightbulb, type LucideIcon,
+  Laptop, Compass, Lightbulb, TrendingUp, LineChart, ShieldCheck, type LucideIcon,
 } from "lucide-react";
 import { FEATURED_CATEGORIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 const ICONS: Record<string, LucideIcon> = {
   FileText, Landmark, Car, GraduationCap, Cog, Stethoscope, HeartPulse, BookOpen,
   School, Building2, University, Award, Newspaper, Users, Globe, Briefcase, Atom,
-  Laptop, Compass, Lightbulb,
+  Laptop, Compass, Lightbulb, TrendingUp, LineChart, ShieldCheck,
 };
 
 const COLOR_CLASSES: Record<string, string> = {

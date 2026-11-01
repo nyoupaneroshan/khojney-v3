@@ -26,14 +26,55 @@ const globalForPrisma = globalThis as unknown as {
 
 const isProd = process.env.NODE_ENV === "production";
 
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    // production: errors + warnings only.
-    // dev: include query logging for profiling.
+function createPrismaClient(): PrismaClient {
+  let ClientConstructor = PrismaClient;
+
+  if (!isProd) {
+    try {
+      // Use native Node require to bypass Turbopack's stale module wrapper
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      const nativeRequire = typeof eval !== "undefined" ? eval("require") : undefined;
+      if (nativeRequire && nativeRequire.cache) {
+        for (const key of Object.keys(nativeRequire.cache)) {
+          if (key.includes("@prisma/client") || key.includes(".prisma/client")) {
+            delete nativeRequire.cache[key];
+          }
+        }
+        const fresh = nativeRequire("@prisma/client");
+        if (fresh && fresh.PrismaClient) {
+          ClientConstructor = fresh.PrismaClient;
+        }
+      }
+    } catch (e) {
+      console.error("[db.ts] Failed to reload native PrismaClient:", e);
+    }
+  }
+
+  return new ClientConstructor({
     log: isProd
       ? ["error", "warn"]
       : ["query", "error", "warn"],
   });
+}
 
-if (!isProd) globalForPrisma.prisma = db;
+function getClient(): PrismaClient {
+  let existing = globalForPrisma.prisma;
+  if (!existing || !("hospital" in existing)) {
+    existing = createPrismaClient();
+    if (!isProd) {
+      globalForPrisma.prisma = existing;
+    }
+  }
+  return existing;
+}
+
+export const db: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getClient();
+    const val = Reflect.get(client, prop, receiver);
+    if (typeof val === "function") {
+      return val.bind(client);
+    }
+    return val;
+  },
+});

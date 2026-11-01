@@ -13,6 +13,10 @@ export const MODULES = [
   "BANK",
   "JOB",
   "GOVERNMENT_SERVICE",
+  "HOSPITAL",
+  "MUTUAL_FUND",
+  "NEPSE",
+  "INSURANCE",
 ] as const;
 export type ModuleKey = (typeof MODULES)[number];
 
@@ -26,6 +30,10 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   BANK: "Banks",
   JOB: "Jobs",
   GOVERNMENT_SERVICE: "Government Services",
+  HOSPITAL: "Hospitals",
+  MUTUAL_FUND: "Mutual Funds",
+  NEPSE: "NEPSE / Share Market",
+  INSURANCE: "Insurance",
 };
 
 export const MODULE_PATHS: Record<ModuleKey, string> = {
@@ -38,6 +46,10 @@ export const MODULE_PATHS: Record<ModuleKey, string> = {
   BANK: "/banks",
   JOB: "/jobs",
   GOVERNMENT_SERVICE: "/government",
+  HOSPITAL: "/hospitals",
+  MUTUAL_FUND: "/mutual-funds",
+  NEPSE: "/nepse",
+  INSURANCE: "/insurance",
 };
 
 export const MODULE_ENTITIES: Record<ModuleKey, string> = {
@@ -50,6 +62,10 @@ export const MODULE_ENTITIES: Record<ModuleKey, string> = {
   BANK: "Bank",
   JOB: "Job",
   GOVERNMENT_SERVICE: "GovernmentService",
+  HOSPITAL: "Hospital",
+  MUTUAL_FUND: "MutualFund",
+  NEPSE: "NepseStock",
+  INSURANCE: "InsuranceCompany",
 };
 
 export const NEPAL_PROVINCES = [
@@ -120,6 +136,50 @@ export const FEATURED_CATEGORIES = [
   { name: "Banks", icon: "Landmark", color: "blue", href: "/banks" },
   { name: "Jobs", icon: "Briefcase", color: "amber", href: "/jobs" },
   { name: "Govt Services", icon: "Building", color: "purple", href: "/government" },
+  { name: "Hospitals", icon: "HeartPulse", color: "rose", href: "/hospitals" },
+  { name: "Mutual Funds", icon: "TrendingUp", color: "teal", href: "/mutual-funds" },
+  { name: "NEPSE", icon: "LineChart", color: "emerald", href: "/nepse" },
+  { name: "Insurance", icon: "ShieldCheck", color: "blue", href: "/insurance" },
   { name: "Blog", icon: "Newspaper", color: "orange", href: "/blog" },
   { name: "Teacher License", icon: "Users", color: "pink", href: "/exams?category=teacher-license" },
 ] as const;
+
+export const HOSPITAL_TYPES = [
+  "GENERAL",
+  "TEACHING",
+  "SPECIALTY",
+  "GOVT",
+  "PRIVATE",
+  "EYE",
+  "AYURVEDIC",
+] as const;
+
+export const MUTUAL_FUND_TYPES = ["CLOSE_ENDED", "OPEN_ENDED"] as const;
+
+export const MUTUAL_FUND_CATEGORIES = [
+  "EQUITY",
+  "BALANCED",
+  "DEBT",
+  "INDEX",
+] as const;
+
+export const NEPSE_SECTORS = [
+  "COMMERCIAL_BANK",
+  "HYDROPOWER",
+  "MICROFINANCE",
+  "LIFE_INSURANCE",
+  "NON_LIFE_INSURANCE",
+  "HOTELS",
+  "MANUFACTURING",
+  "INVESTMENT",
+  "TELECOM",
+  "OTHERS",
+] as const;
+
+export const INSURANCE_TYPES = [
+  "LIFE",
+  "NON_LIFE",
+  "REINSURANCE",
+  "MICRO_INSURANCE",
+] as const;
+

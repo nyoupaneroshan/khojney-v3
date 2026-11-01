@@ -487,3 +487,224 @@ export function parseGovernmentServiceInitial(raw: Record<string, unknown>): Par
     isPublished: raw.isPublished !== false,
   };
 }
+
+export interface HospitalInitial {
+  id?: string;
+  name: string;
+  slug: string;
+  shortName: string | null;
+  description: string;
+  type: string;
+  province: string | null;
+  district: string | null;
+  city: string | null;
+  address: string | null;
+  establishedYear: number | null;
+  website: string | null;
+  phone: string | null;
+  emergencyPhone: string | null;
+  email: string | null;
+  logo: string | null;
+  coverImage: string | null;
+  bedCount: number | null;
+  icuBeds: number | null;
+  ventilatorCount: number | null;
+  hasEmergency: boolean;
+  hasAmbulance: boolean;
+  hasBloodBank: boolean;
+  hasPharmacy24x7: boolean;
+  departments: string[];
+  facilities: string[];
+  isFeatured: boolean;
+  isPublished: boolean;
+}
+
+export function parseHospitalInitial(raw: Record<string, unknown>): Partial<HospitalInitial> {
+  return {
+    id: raw.id as string,
+    name: raw.name as string,
+    slug: raw.slug as string,
+    shortName: (raw.shortName as string) || null,
+    description: (raw.description as string) || "",
+    type: (raw.type as string) || "GENERAL",
+    province: (raw.province as string) || null,
+    district: (raw.district as string) || null,
+    city: (raw.city as string) || null,
+    address: (raw.address as string) || null,
+    establishedYear: raw.establishedYear != null ? Number(raw.establishedYear) : null,
+    website: (raw.website as string) || null,
+    phone: (raw.phone as string) || null,
+    emergencyPhone: (raw.emergencyPhone as string) || null,
+    email: (raw.email as string) || null,
+    logo: (raw.logo as string) || null,
+    coverImage: (raw.coverImage as string) || null,
+    bedCount: raw.bedCount != null ? Number(raw.bedCount) : null,
+    icuBeds: raw.icuBeds != null ? Number(raw.icuBeds) : null,
+    ventilatorCount: raw.ventilatorCount != null ? Number(raw.ventilatorCount) : null,
+    hasEmergency: raw.hasEmergency !== false,
+    hasAmbulance: raw.hasAmbulance !== false,
+    hasBloodBank: Boolean(raw.hasBloodBank),
+    hasPharmacy24x7: raw.hasPharmacy24x7 !== false,
+    departments: parseJson<string[]>(raw.departments as string, []),
+    facilities: parseJson<string[]>(raw.facilities as string, []),
+    isFeatured: Boolean(raw.isFeatured),
+    isPublished: raw.isPublished !== false,
+  };
+}
+
+export interface MutualFundInitial {
+  id?: string;
+  name: string;
+  slug: string;
+  schemeCode: string | null;
+  fundManager: string;
+  sponsor: string | null;
+  description: string;
+  fundType: string;
+  category: string;
+  nav: number | null;
+  navDate: string | null;
+  fundSize: number | null;
+  totalUnits: number | null;
+  maturityDate: string | null;
+  launchDate: string | null;
+  dividendYield: number | null;
+  latestDividend: string | null;
+  topHoldings: string[];
+  website: string | null;
+  contactPhone: string | null;
+  isFeatured: boolean;
+  isPublished: boolean;
+}
+
+export function parseMutualFundInitial(raw: Record<string, unknown>): Partial<MutualFundInitial> {
+  return {
+    id: raw.id as string,
+    name: raw.name as string,
+    slug: raw.slug as string,
+    schemeCode: (raw.schemeCode as string) || null,
+    fundManager: (raw.fundManager as string) || "",
+    sponsor: (raw.sponsor as string) || null,
+    description: (raw.description as string) || "",
+    fundType: (raw.fundType as string) || "CLOSE_ENDED",
+    category: (raw.category as string) || "EQUITY",
+    nav: raw.nav != null ? Number(raw.nav) : null,
+    navDate: raw.navDate ? new Date(raw.navDate as string).toISOString().slice(0, 10) : null,
+    fundSize: raw.fundSize != null ? Number(raw.fundSize) : null,
+    totalUnits: raw.totalUnits != null ? Number(raw.totalUnits) : null,
+    maturityDate: raw.maturityDate ? new Date(raw.maturityDate as string).toISOString().slice(0, 10) : null,
+    launchDate: raw.launchDate ? new Date(raw.launchDate as string).toISOString().slice(0, 10) : null,
+    dividendYield: raw.dividendYield != null ? Number(raw.dividendYield) : null,
+    latestDividend: (raw.latestDividend as string) || null,
+    topHoldings: parseJson<string[]>(raw.topHoldings as string, []),
+    website: (raw.website as string) || null,
+    contactPhone: (raw.contactPhone as string) || null,
+    isFeatured: Boolean(raw.isFeatured),
+    isPublished: raw.isPublished !== false,
+  };
+}
+
+export interface NepseStockInitial {
+  id?: string;
+  slug: string;
+  symbol: string;
+  companyName: string;
+  description: string;
+  sector: string;
+  ltp: number | null;
+  pointChange: number | null;
+  percentChange: number | null;
+  high52: number | null;
+  low52: number | null;
+  peRatio: number | null;
+  eps: number | null;
+  bookValue: number | null;
+  marketCap: number | null;
+  paidUpCapital: number | null;
+  dividendYield: number | null;
+  bonusShare: string | null;
+  cashDividend: string | null;
+  website: string | null;
+  headquarters: string | null;
+  establishedYear: number | null;
+  isFeatured: boolean;
+  isPublished: boolean;
+}
+
+export function parseNepseStockInitial(raw: Record<string, unknown>): Partial<NepseStockInitial> {
+  return {
+    id: raw.id as string,
+    slug: raw.slug as string,
+    symbol: raw.symbol as string,
+    companyName: raw.companyName as string,
+    description: (raw.description as string) || "",
+    sector: (raw.sector as string) || "COMMERCIAL_BANK",
+    ltp: raw.ltp != null ? Number(raw.ltp) : null,
+    pointChange: raw.pointChange != null ? Number(raw.pointChange) : null,
+    percentChange: raw.percentChange != null ? Number(raw.percentChange) : null,
+    high52: raw.high52 != null ? Number(raw.high52) : null,
+    low52: raw.low52 != null ? Number(raw.low52) : null,
+    peRatio: raw.peRatio != null ? Number(raw.peRatio) : null,
+    eps: raw.eps != null ? Number(raw.eps) : null,
+    bookValue: raw.bookValue != null ? Number(raw.bookValue) : null,
+    marketCap: raw.marketCap != null ? Number(raw.marketCap) : null,
+    paidUpCapital: raw.paidUpCapital != null ? Number(raw.paidUpCapital) : null,
+    dividendYield: raw.dividendYield != null ? Number(raw.dividendYield) : null,
+    bonusShare: (raw.bonusShare as string) || null,
+    cashDividend: (raw.cashDividend as string) || null,
+    website: (raw.website as string) || null,
+    headquarters: (raw.headquarters as string) || null,
+    establishedYear: raw.establishedYear != null ? Number(raw.establishedYear) : null,
+    isFeatured: Boolean(raw.isFeatured),
+    isPublished: raw.isPublished !== false,
+  };
+}
+
+export interface InsuranceCompanyInitial {
+  id?: string;
+  slug: string;
+  name: string;
+  shortName: string;
+  description: string;
+  type: string;
+  establishedYear: number | null;
+  headquarters: string | null;
+  website: string | null;
+  phone: string | null;
+  email: string | null;
+  logo: string | null;
+  paidUpCapital: number | null;
+  claimSettlementRatio: number | null;
+  branchCount: number | null;
+  solvencyRatio: number | null;
+  popularPlans: { name: string; category?: string; minSumAssured?: string; termYears?: string; description?: string }[];
+  coverageTypes: string[];
+  isFeatured: boolean;
+  isPublished: boolean;
+}
+
+export function parseInsuranceCompanyInitial(raw: Record<string, unknown>): Partial<InsuranceCompanyInitial> {
+  return {
+    id: raw.id as string,
+    slug: raw.slug as string,
+    name: raw.name as string,
+    shortName: (raw.shortName as string) || "",
+    description: (raw.description as string) || "",
+    type: (raw.type as string) || "LIFE",
+    establishedYear: raw.establishedYear != null ? Number(raw.establishedYear) : null,
+    headquarters: (raw.headquarters as string) || null,
+    website: (raw.website as string) || null,
+    phone: (raw.phone as string) || null,
+    email: (raw.email as string) || null,
+    logo: (raw.logo as string) || null,
+    paidUpCapital: raw.paidUpCapital != null ? Number(raw.paidUpCapital) : null,
+    claimSettlementRatio: raw.claimSettlementRatio != null ? Number(raw.claimSettlementRatio) : null,
+    branchCount: raw.branchCount != null ? Number(raw.branchCount) : null,
+    solvencyRatio: raw.solvencyRatio != null ? Number(raw.solvencyRatio) : null,
+    popularPlans: parseJson(raw.popularPlans as string, []),
+    coverageTypes: parseJson<string[]>(raw.coverageTypes as string, []),
+    isFeatured: Boolean(raw.isFeatured),
+    isPublished: raw.isPublished !== false,
+  };
+}
+

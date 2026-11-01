@@ -51,6 +51,14 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Khojney Team" }],
   creator: "Khojney",
+  alternates: {
+    canonical: "/",
+  },
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon.png",
+  },
   openGraph: {
     type: "website",
     locale: "en_NP",
@@ -59,17 +67,32 @@ export const metadata: Metadata = {
     title: "Khojney — Everything About Nepal, In One Place",
     description:
       "Prepare for exams, discover colleges, compare schools, find scholarships, and access knowledge from across Nepal.",
+    images: [
+      {
+        url: "/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "Khojney — Everything About Nepal, In One Place",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Khojney — Everything About Nepal, In One Place",
     description:
       "Prepare for exams, discover colleges, compare schools, find scholarships, and access knowledge from across Nepal.",
+    images: ["/og-default.png"],
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 

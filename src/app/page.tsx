@@ -1,3 +1,4 @@
+// Khojney Nepal Homepage
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { HomeHero } from "@/components/khojney/home-hero";
@@ -8,7 +9,14 @@ import { FeaturedExams } from "@/components/khojney/featured-exams";
 import { FeaturedScholarships } from "@/components/khojney/featured-scholarships";
 import { RecentPosts } from "@/components/khojney/recent-posts";
 import { StatsRow } from "@/components/khojney/stats-row";
+import { JsonLd } from "@/components/khojney/json-ld";
 import { FeaturedBanks, FeaturedJobs, FeaturedGovtServices } from "@/components/khojney/featured-phase2";
+import {
+  FeaturedHospitals,
+  FeaturedNepseStocks,
+  FeaturedMutualFunds,
+  FeaturedInsurance,
+} from "@/components/khojney/featured-phase3";
 import { getSession } from "@/lib/auth-server";
 import {
   getCachedTrendingSearches,
@@ -19,6 +27,10 @@ import {
   getCachedFeaturedBanks,
   getCachedFeaturedJobs,
   getCachedFeaturedGovernment,
+  getCachedFeaturedHospitals,
+  getCachedFeaturedNepseStocks,
+  getCachedFeaturedMutualFunds,
+  getCachedFeaturedInsurance,
   getCachedHomepageStats,
   getCachedCategories,
 } from "@/lib/cache";
@@ -44,6 +56,10 @@ export default async function HomePage() {
     featuredBanks,
     featuredJobs,
     featuredGovtServices,
+    featuredHospitals,
+    featuredNepseStocks,
+    featuredMutualFunds,
+    featuredInsurance,
     stats,
   ] = await Promise.all([
     getCachedTrendingSearches(10),
@@ -54,6 +70,10 @@ export default async function HomePage() {
     getCachedFeaturedBanks(4),
     getCachedFeaturedJobs(4),
     getCachedFeaturedGovernment(4),
+    getCachedFeaturedHospitals(4),
+    getCachedFeaturedNepseStocks(4),
+    getCachedFeaturedMutualFunds(4),
+    getCachedFeaturedInsurance(4),
     getCachedHomepageStats(),
   ]);
 
@@ -68,10 +88,48 @@ export default async function HomePage() {
     banks: stats.banks,
     jobs: stats.jobs,
     govtServices: stats.government,
+    hospitals: stats.hospitals,
+    mutualFunds: stats.mutualFunds,
+    nepseStocks: stats.nepseStocks,
+    insurance: stats.insurance,
+  };
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Khojney",
+    alternateName: ["Khojney Nepal", "खोज्ने"],
+    url: "https://khojney.com",
+    description:
+      "Nepal's knowledge & preparation platform for mock tests, colleges, scholarships, hospitals, banks, and public resources.",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://khojney.com/search?q={search_term_string}",
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Khojney",
+    url: "https://khojney.com",
+    logo: "https://khojney.com/logo.svg",
+    description:
+      "Khojney is on a mission to organize every exam, college, scholarship, and public resource in Nepal into one accessible platform.",
+    sameAs: [
+      "https://facebook.com/khojney",
+      "https://twitter.com/khojney",
+    ],
   };
 
   return (
     <AppShell user={user}>
+      <JsonLd data={websiteJsonLd} />
+      <JsonLd data={organizationJsonLd} />
       <HomeHero trending={trending} />
       <StatsRow stats={statsProps} />
 
@@ -112,7 +170,11 @@ export default async function HomePage() {
       <FeaturedExams exams={featuredExams} />
       <FeaturedColleges colleges={featuredColleges} />
       <FeaturedScholarships scholarships={featuredScholarships} />
+      <FeaturedNepseStocks stocks={featuredNepseStocks} />
+      <FeaturedMutualFunds funds={featuredMutualFunds} />
       <FeaturedBanks banks={featuredBanks} />
+      <FeaturedInsurance companies={featuredInsurance} />
+      <FeaturedHospitals hospitals={featuredHospitals} />
       <FeaturedJobs jobs={featuredJobs} />
       <FeaturedGovtServices services={featuredGovtServices} />
       <RecentPosts posts={recentPosts} />

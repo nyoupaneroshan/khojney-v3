@@ -46,23 +46,23 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-sm">Finance & Govt</h3>
             <ul className="mt-3 space-y-2 text-sm">
+              <li><Link href="/nepse" className="text-muted-foreground hover:text-primary">NEPSE Share Market</Link></li>
+              <li><Link href="/mutual-funds" className="text-muted-foreground hover:text-primary">Mutual Funds</Link></li>
+              <li><Link href="/insurance" className="text-muted-foreground hover:text-primary">Insurance Providers</Link></li>
               <li><Link href="/banks" className="text-muted-foreground hover:text-primary">Banks of Nepal</Link></li>
               <li><Link href="/government" className="text-muted-foreground hover:text-primary">Government Services</Link></li>
-              <li><Link href="/government?category=CITIZENSHIP" className="text-muted-foreground hover:text-primary">Citizenship</Link></li>
-              <li><Link href="/government?category=PASSPORT" className="text-muted-foreground hover:text-primary">Passport</Link></li>
-              <li><Link href="/government?category=LICENSE" className="text-muted-foreground hover:text-primary">Driving License</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="font-semibold text-sm">Careers & More</h3>
             <ul className="mt-3 space-y-2 text-sm">
+              <li><Link href="/hospitals" className="text-muted-foreground hover:text-primary">Hospitals & Emergency</Link></li>
               <li><Link href="/jobs" className="text-muted-foreground hover:text-primary">Jobs in Nepal</Link></li>
-              <li><Link href="/blog" className="text-muted-foreground hover:text-primary">Blog</Link></li>
+              <li><Link href="/blog" className="text-muted-foreground hover:text-primary">Blog & Exam Tips</Link></li>
               <li><Link href="/compare" className="text-muted-foreground hover:text-primary">Compare Colleges</Link></li>
               <li><Link href="/in" className="text-muted-foreground hover:text-primary">Browse by Location</Link></li>
-              <li><Link href="/search" className="text-muted-foreground hover:text-primary">Search</Link></li>
-              <li><Link href="/dashboard" className="text-muted-foreground hover:text-primary">Dashboard</Link></li>
+              <li><Link href="/search" className="text-muted-foreground hover:text-primary">Universal Search</Link></li>
             </ul>
           </div>
 

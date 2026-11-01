@@ -28,7 +28,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { parseJsonArray, formatDate, daysUntil } from "@/components/khojney/format";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
-import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { buildMetadata, MODULE_KEYWORDS, buildBreadcrumbSchema, buildItemListSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/khojney/json-ld";
 import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 import { formatSalary } from "@/lib/job-utils";
 
@@ -136,8 +137,25 @@ export default async function JobsListPage({
     location,
   ].filter(Boolean).length;
 
+  const breadcrumbLd = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Jobs", url: BASE_PATH },
+  ]);
+
+  const itemListLd = buildItemListSchema({
+    name: "Jobs in Nepal",
+    description: "Explore job opportunities across Nepal — full-time, part-time, remote, internship, and contract roles.",
+    items: jobs.map((j) => ({
+      name: j.title,
+      url: `/jobs/${j.slug}`,
+      image: j.coverImage || null,
+    })),
+  });
+
   return (
     <AppShell user={user}>
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={itemListLd} />
       <ListPageHeader
         title="Jobs in Nepal"
         description="Explore job opportunities across Nepal — full-time, part-time, remote, internship, and contract roles in every major industry."

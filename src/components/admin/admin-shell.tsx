@@ -25,6 +25,14 @@ import {
   Menu,
   Search,
   Bell,
+  LineChart,
+  Coins,
+  MessageSquare,
+  Globe,
+  Upload,
+  MessageSquareQuote,
+  Bot,
+  Cpu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -71,18 +79,23 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Banks", href: "/admin/banks", icon: Landmark },
   { label: "Jobs", href: "/admin/jobs", icon: Briefcase },
   { label: "Government Services", href: "/admin/government", icon: Building2 },
+  { label: "Hospitals", href: "/admin/hospitals", icon: HeartPulse },
+  { label: "Mutual Funds", href: "/admin/mutual-funds", icon: Coins },
+  { label: "NEPSE / Share Market", href: "/admin/nepse", icon: LineChart },
+  { label: "Insurance", href: "/admin/insurance", icon: ShieldCheck },
   { label: "Blog Posts", href: "/admin/blog", icon: Newspaper },
   { label: "Categories", href: "/admin/categories", icon: FolderTree },
   { label: "Trending Searches", href: "/admin/trending", icon: TrendingUp },
   { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Reviews", href: "/admin/review", icon: MessageSquare },
+  { label: "SEO Management", href: "/admin/seo", icon: Globe },
+  { label: "Bulk Upload", href: "/admin/bulk-upload", icon: Upload },
+  { label: "Community", href: "/admin/community", icon: MessageSquareQuote },
+  { label: "AI Management", href: "/admin/ai-management", icon: Bot },
+  { label: "Automation", href: "/admin/automation", icon: Cpu },
 ];
 
-const COMING_SOON: NavItem[] = [
-  { label: "Hospitals", href: "#", icon: HeartPulse, disabled: true },
-  { label: "Mutual Funds", href: "#", icon: TrendingUp, disabled: true },
-  { label: "NEPSE / Share Market", href: "#", icon: TrendingUp, disabled: true },
-  { label: "Insurance", href: "#", icon: ShieldCheck, disabled: true },
-];
+const COMING_SOON: NavItem[] = [];
 
 const ROUTE_TITLES: Record<string, string> = {
   "/admin": "Dashboard",
@@ -94,10 +107,20 @@ const ROUTE_TITLES: Record<string, string> = {
   "/admin/banks": "Banks",
   "/admin/jobs": "Jobs",
   "/admin/government": "Government Services",
+  "/admin/hospitals": "Hospitals",
+  "/admin/mutual-funds": "Mutual Funds",
+  "/admin/nepse": "NEPSE / Share Market",
+  "/admin/insurance": "Insurance",
   "/admin/blog": "Blog Posts",
   "/admin/categories": "Categories",
   "/admin/trending": "Trending Searches",
   "/admin/users": "Users",
+  "/admin/review": "Reviews",
+  "/admin/seo": "SEO Management",
+  "/admin/bulk-upload": "Bulk Upload",
+  "/admin/community": "Community",
+  "/admin/ai-management": "AI Management",
+  "/admin/automation": "Automation",
 };
 
 const SINGULAR: Record<string, string> = {
@@ -109,10 +132,20 @@ const SINGULAR: Record<string, string> = {
   Banks: "Bank",
   Jobs: "Job",
   "Government Services": "Government Service",
+  Hospitals: "Hospital",
+  "Mutual Funds": "Mutual Fund",
+  "NEPSE / Share Market": "Listed Company",
+  Insurance: "Insurance Company",
   "Blog Posts": "Blog Post",
   Categories: "Category",
   "Trending Searches": "Trending Search",
   Users: "User",
+  Reviews: "Review",
+  "SEO Management": "SEO",
+  "Bulk Upload": "Bulk Upload",
+  Community: "Community",
+  "AI Management": "AI",
+  Automation: "Automation",
 };
 
 function getRouteTitle(pathname: string): string {
@@ -160,26 +193,30 @@ function SidebarNav({ pathname, onNavigate }: { pathname: string; onNavigate?: (
         );
       })}
 
-      <div className="px-3 pt-6 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Phase 2
-      </div>
-      {COMING_SOON.map((item) => {
-        const Icon = item.icon;
-        return (
-          <div
-            key={item.label}
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground/60 cursor-not-allowed"
-            aria-disabled="true"
-            title="Coming soon"
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{item.label}</span>
-            <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1.5">
-              Soon
-            </Badge>
+      {COMING_SOON.length > 0 && (
+        <>
+          <div className="px-3 pt-6 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Upcoming
           </div>
-        );
-      })}
+          {COMING_SOON.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div
+                key={item.label}
+                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground/60 cursor-not-allowed"
+                aria-disabled="true"
+                title="Coming soon"
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{item.label}</span>
+                <Badge variant="outline" className="ml-auto text-[10px] py-0 px-1.5">
+                  Soon
+                </Badge>
+              </div>
+            );
+          })}
+        </>
+      )}
     </nav>
   );
 }

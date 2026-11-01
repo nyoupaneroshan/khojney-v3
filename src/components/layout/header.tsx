@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, Search, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Menu, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -46,12 +46,15 @@ const NAV_LINKS: NavLink[] = [
   },
   {
     label: "Finance",
-    href: "/banks",
+    href: "/nepse",
     children: [
+      { label: "NEPSE Stocks", href: "/nepse", description: "Share prices, P/E, EPS & market cap" },
+      { label: "Mutual Funds", href: "/mutual-funds", description: "Latest NAVs, returns & portfolios" },
       { label: "Banks of Nepal", href: "/banks", description: "Compare interest rates & services" },
-      { label: "Govt Services", href: "/government?category=TAX", description: "PAN, VAT, tax filing" },
+      { label: "Insurance", href: "/insurance", description: "Life & non-life claim settlement ratios" },
     ],
   },
+  { label: "Hospitals", href: "/hospitals" },
   { label: "Careers", href: "/jobs" },
   {
     label: "Government",
@@ -66,7 +69,6 @@ const NAV_LINKS: NavLink[] = [
     ],
   },
   { label: "Compare", href: "/compare" },
-  { label: "Directory", href: "/colleges" },
 ];
 
 interface HeaderProps {

@@ -1,4 +1,4 @@
-import { GraduationCap, School, University, Award, FileText, Newspaper, Landmark, Briefcase, Building } from "lucide-react";
+import { GraduationCap, School, University, Award, FileText, Landmark, Briefcase, Building, HeartPulse, BarChart3, PieChart, ShieldCheck } from "lucide-react";
 
 interface Stats {
   colleges: number;
@@ -10,6 +10,10 @@ interface Stats {
   banks?: number;
   jobs?: number;
   govtServices?: number;
+  hospitals?: number;
+  mutualFunds?: number;
+  nepseStocks?: number;
+  insurance?: number;
 }
 
 const STAT_CARDS: { key: keyof Stats; label: string; icon: React.ElementType; color: string }[] = [
@@ -17,11 +21,14 @@ const STAT_CARDS: { key: keyof Stats; label: string; icon: React.ElementType; co
   { key: "colleges", label: "Colleges", icon: GraduationCap, color: "bg-blue-50 text-blue-600" },
   { key: "schools", label: "Schools", icon: School, color: "bg-amber-50 text-amber-600" },
   { key: "universities", label: "Universities", icon: University, color: "bg-purple-50 text-purple-600" },
-  { key: "scholarships", label: "Scholarships", icon: Award, color: "bg-emerald-50 text-emerald-600" },
+  { key: "nepseStocks", label: "NEPSE Stocks", icon: BarChart3, color: "bg-emerald-50 text-emerald-600" },
+  { key: "mutualFunds", label: "Mutual Funds", icon: PieChart, color: "bg-teal-50 text-teal-600" },
   { key: "banks", label: "Banks", icon: Landmark, color: "bg-cyan-50 text-cyan-600" },
+  { key: "insurance", label: "Insurance", icon: ShieldCheck, color: "bg-blue-50 text-blue-600" },
+  { key: "hospitals", label: "Hospitals", icon: HeartPulse, color: "bg-rose-50 text-rose-600" },
   { key: "jobs", label: "Jobs", icon: Briefcase, color: "bg-orange-50 text-orange-600" },
-  { key: "govtServices", label: "Govt Services", icon: Building, color: "bg-teal-50 text-teal-600" },
-  { key: "posts", label: "Articles", icon: Newspaper, color: "bg-rose-50 text-rose-600" },
+  { key: "govtServices", label: "Govt Services", icon: Building, color: "bg-indigo-50 text-indigo-600" },
+  { key: "scholarships", label: "Scholarships", icon: Award, color: "bg-amber-50 text-amber-600" },
 ];
 
 export function StatsRow({ stats }: { stats: Stats }) {

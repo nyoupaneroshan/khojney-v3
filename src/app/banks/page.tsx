@@ -26,7 +26,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
-import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { buildMetadata, MODULE_KEYWORDS, buildBreadcrumbSchema, buildItemListSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/khojney/json-ld";
 import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
@@ -108,8 +109,25 @@ export default async function BanksListPage({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const activeFilterCount = [q, type].filter(Boolean).length;
 
+  const breadcrumbLd = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Banks", url: BASE_PATH },
+  ]);
+
+  const itemListLd = buildItemListSchema({
+    name: "Banks of Nepal",
+    description: "Browse and compare commercial, development, finance, and microfinance banks across Nepal.",
+    items: banks.map((b) => ({
+      name: b.name,
+      url: `/banks/${b.slug}`,
+      image: b.logo || b.coverImage || null,
+    })),
+  });
+
   return (
     <AppShell user={user}>
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={itemListLd} />
       <ListPageHeader
         title="Banks of Nepal"
         description="Browse and compare commercial, development, finance, and microfinance banks across Nepal. Check interest rates, branches, ATMs, mobile & internet banking, cards, and loans."

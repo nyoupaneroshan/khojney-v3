@@ -18,6 +18,8 @@ interface SeoMetaInput {
   authors?: string[];
 }
 
+export const SITE_URL = "https://khojney.com";
+
 /**
  * Build a complete Metadata object with OpenGraph + Twitter Card fields.
  */
@@ -53,6 +55,52 @@ export function buildMetadata({
       description,
       images: [ogImage],
     },
+  };
+}
+
+/**
+ * Builds schema.org BreadcrumbList structured data.
+ */
+export function buildBreadcrumbSchema(items: { name: string; url?: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      ...(item.url
+        ? { item: item.url.startsWith("http") ? item.url : `${SITE_URL}${item.url}` }
+        : {}),
+    })),
+  };
+}
+
+/**
+ * Builds schema.org ItemList structured data for directory and category listings.
+ */
+export function buildItemListSchema({
+  name,
+  description,
+  items,
+}: {
+  name: string;
+  description?: string;
+  items: { name: string; url: string; image?: string | null }[];
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    ...(description ? { description } : {}),
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: item.url.startsWith("http") ? item.url : `${SITE_URL}${item.url}`,
+      ...(item.image ? { image: item.image } : {}),
+    })),
   };
 }
 
@@ -157,5 +205,48 @@ export const MODULE_KEYWORDS = {
     "college admission guide nepal",
     "scholarship guide nepal",
     "khojney blog",
+  ],
+  hospitals: [
+    "hospitals in nepal",
+    "best hospitals in nepal",
+    "emergency hospital kathmandu",
+    "teaching hospital nepal",
+    "bir hospital",
+    "tuth kathmandu",
+    "specialty hospitals nepal",
+    "ambulance number nepal",
+    "khojney hospitals",
+  ],
+  mutualFunds: [
+    "mutual funds in nepal",
+    "nepal mutual funds",
+    "open ended mutual fund nepal",
+    "close ended mutual fund nepal",
+    "latest nav nepal",
+    "dividend yield mutual fund",
+    "sebon mutual funds",
+    "khojney mutual funds",
+  ],
+  nepse: [
+    "nepse listed companies",
+    "nepal stock exchange",
+    "share market nepal",
+    "nepse ltp",
+    "best stocks to buy nepal",
+    "commercial banks share price",
+    "hydropower shares nepal",
+    "pe ratio nepse",
+    "khojney nepse",
+  ],
+  insurance: [
+    "insurance companies in nepal",
+    "life insurance nepal",
+    "non life insurance nepal",
+    "claim settlement ratio nepal",
+    "best insurance policy nepal",
+    "beema pradhikaran",
+    "motor insurance nepal",
+    "health insurance nepal",
+    "khojney insurance",
   ],
 } as const;

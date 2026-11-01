@@ -695,3 +695,145 @@ model Comment {
   updatedAt DateTime @updatedAt
   @@index([entity, entityId, createdAt])
 }
+
+// ============================================================
+// PHASE 3 MODULES: HOSPITALS, MUTUAL FUNDS, NEPSE, INSURANCE
+// ============================================================
+
+// ─── MODULE: HOSPITALS (Health) ──────────────────────────────
+model Hospital {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  shortName       String?
+  description     String
+  type            String   @default("GENERAL") // GENERAL | TEACHING | SPECIALTY | GOVT | PRIVATE | EYE | AYURVEDIC
+  province        String?
+  district        String?
+  city            String?
+  address         String?
+  establishedYear Int?
+  website         String?
+  phone           String?
+  emergencyPhone  String?
+  email           String?
+  logo            String?
+  coverImage      String?
+  bedCount        Int?
+  icuBeds         Int?
+  ventilatorCount Int?
+  hasEmergency    Boolean  @default(true)
+  hasAmbulance    Boolean  @default(true)
+  hasBloodBank    Boolean  @default(false)
+  hasPharmacy24x7 Boolean  @default(true)
+  departments     String?  // JSON array of strings
+  facilities      String?  // JSON array of strings
+  rating          Float    @default(0)
+  reviewCount     Int      @default(0)
+  isFeatured      Boolean  @default(false)
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isPublished, isFeatured, rating])
+  @@index([type])
+  @@index([province, district])
+  @@index([city])
+}
+
+// ─── MODULE: MUTUAL FUNDS (Finance) ──────────────────────────
+model MutualFund {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  name            String
+  schemeCode      String?
+  fundManager     String
+  sponsor         String?
+  description     String
+  fundType        String    @default("CLOSE_ENDED") // CLOSE_ENDED | OPEN_ENDED
+  category        String    @default("EQUITY") // EQUITY | BALANCED | DEBT | INDEX
+  nav             Float?
+  navDate         DateTime?
+  fundSize        Float?    // in Crore NPR
+  totalUnits      Float?    // in Crore units
+  maturityDate    DateTime?
+  launchDate      DateTime?
+  dividendYield   Float?
+  latestDividend  String?
+  topHoldings     String?   // JSON array of strings
+  website         String?
+  contactPhone    String?
+  isFeatured      Boolean   @default(false)
+  isPublished     Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([isPublished, isFeatured])
+  @@index([fundType])
+  @@index([category])
+}
+
+// ─── MODULE: NEPSE / SHARE MARKET (Finance) ──────────────────
+model NepseStock {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  symbol          String   @unique
+  companyName     String
+  description     String
+  sector          String   // COMMERCIAL_BANK | HYDROPOWER | MICROFINANCE | LIFE_INSURANCE | NON_LIFE_INSURANCE | HOTELS | MANUFACTURING | INVESTMENT | TELECOM | OTHERS
+  ltp             Float?   // Last Traded Price NPR
+  pointChange     Float?
+  percentChange   Float?
+  high52          Float?
+  low52           Float?
+  peRatio         Float?
+  eps             Float?
+  bookValue       Float?
+  marketCap       Float?   // in Crore NPR
+  paidUpCapital   Float?   // in Crore NPR
+  dividendYield   Float?
+  bonusShare      String?
+  cashDividend    String?
+  website         String?
+  headquarters    String?
+  establishedYear Int?
+  isFeatured      Boolean  @default(false)
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isPublished, isFeatured])
+  @@index([sector])
+  @@index([symbol])
+}
+
+// ─── MODULE: INSURANCE (Finance) ─────────────────────────────
+model InsuranceCompany {
+  id                   String   @id @default(cuid())
+  slug                 String   @unique
+  name                 String
+  shortName            String
+  description          String
+  type                 String   @default("LIFE") // LIFE | NON_LIFE | REINSURANCE | MICRO_INSURANCE
+  establishedYear      Int?
+  headquarters         String?
+  website              String?
+  phone                String?
+  email                String?
+  logo                 String?
+  paidUpCapital        Float?   // in Crore NPR
+  claimSettlementRatio Float?   // percentage e.g. 96.5
+  branchCount          Int?
+  solvencyRatio        Float?
+  popularPlans         String?  // JSON array of plan objects
+  coverageTypes        String?  // JSON array of strings
+  rating               Float    @default(0)
+  reviewCount          Int      @default(0)
+  isFeatured           Boolean  @default(false)
+  isPublished          Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([isPublished, isFeatured, rating])
+  @@index([type])
+}

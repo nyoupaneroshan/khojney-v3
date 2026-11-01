@@ -15,6 +15,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/universities`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/scholarships`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/banks`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    { url: `${base}/nepse`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
+    { url: `${base}/mutual-funds`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    { url: `${base}/insurance`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
+    { url: `${base}/hospitals`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/jobs`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/government`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
@@ -25,7 +29,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/login`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.4 },
   ];
 
-  const [exams, examCategories, colleges, schools, universities, scholarships, posts, banks, jobs, govtServices] = await Promise.all([
+  const [
+    exams,
+    examCategories,
+    colleges,
+    schools,
+    universities,
+    scholarships,
+    posts,
+    banks,
+    jobs,
+    govtServices,
+    hospitals,
+    mutualFunds,
+    nepseStocks,
+    insuranceCompanies,
+  ] = await Promise.all([
     db.exam.findMany({
       where: { isPublished: true, parentId: null },
       select: { slug: true, updatedAt: true, categoryId: true, category: { select: { slug: true } } },
@@ -42,6 +61,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     db.bank.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     db.job.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     db.governmentService.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
+    db.hospital.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
+    db.mutualFund.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
+    db.nepseStock.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
+    db.insuranceCompany.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
   ]);
 
   const dynamic: MetadataRoute.Sitemap = [
@@ -68,6 +91,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...universities.map((u) => ({ url: `${base}/universities/${u.slug}`, lastModified: u.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
     ...scholarships.map((s) => ({ url: `${base}/scholarships/${s.slug}`, lastModified: s.updatedAt, changeFrequency: "weekly" as const, priority: 0.7 })),
     ...banks.map((b) => ({ url: `${base}/banks/${b.slug}`, lastModified: b.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
+    ...nepseStocks.map((n) => ({ url: `${base}/nepse/${n.slug}`, lastModified: n.updatedAt, changeFrequency: "daily" as const, priority: 0.8 })),
+    ...mutualFunds.map((m) => ({ url: `${base}/mutual-funds/${m.slug}`, lastModified: m.updatedAt, changeFrequency: "weekly" as const, priority: 0.7 })),
+    ...insuranceCompanies.map((i) => ({ url: `${base}/insurance/${i.slug}`, lastModified: i.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
+    ...hospitals.map((h) => ({ url: `${base}/hospitals/${h.slug}`, lastModified: h.updatedAt, changeFrequency: "weekly" as const, priority: 0.8 })),
     ...jobs.map((j) => ({ url: `${base}/jobs/${j.slug}`, lastModified: j.updatedAt, changeFrequency: "weekly" as const, priority: 0.8 })),
     ...govtServices.map((g) => ({ url: `${base}/government/${g.slug}`, lastModified: g.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
     ...posts.map((p) => ({ url: `${base}/blog/${p.slug}`, lastModified: p.publishedAt, changeFrequency: "monthly" as const, priority: 0.6 })),

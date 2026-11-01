@@ -18,7 +18,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { formatDate, daysUntil } from "@/components/khojney/format";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
-import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { buildMetadata, MODULE_KEYWORDS, buildBreadcrumbSchema, buildItemListSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/khojney/json-ld";
 import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
@@ -96,8 +97,25 @@ export default async function ScholarshipsListPage({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const activeFilterCount = [q, level, field, country, openOnly ? "1" : ""].filter(Boolean).length;
 
+  const breadcrumbLd = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Scholarships", url: BASE_PATH },
+  ]);
+
+  const itemListLd = buildItemListSchema({
+    name: "Scholarships in Nepal & Abroad",
+    description: "Discover scholarships for Nepali students — school, +2, bachelors, masters, and PhD.",
+    items: scholarships.map((s) => ({
+      name: s.title,
+      url: `/scholarships/${s.slug}`,
+      image: s.coverImage || null,
+    })),
+  });
+
   return (
     <AppShell user={user}>
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={itemListLd} />
       <ListPageHeader
         title="Scholarships"
         description="Find local and international scholarships for Nepali students — from +2 through PhD."

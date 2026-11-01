@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 interface ReviewFormProps {
-  entity: "COLLEGE" | "SCHOOL" | "UNIVERSITY" | "SCHOLARSHIP" | "BANK";
+  entity: "COLLEGE" | "SCHOOL" | "UNIVERSITY" | "SCHOLARSHIP" | "BANK" | "HOSPITAL" | "INSURANCE";
   entityId: string;
   /** Slug of the entity (for redirect after submit if needed). */
   entitySlug?: string;

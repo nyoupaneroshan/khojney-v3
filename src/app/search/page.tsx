@@ -37,6 +37,10 @@ const MODULE_TABS = [
   { key: "BANK", label: "Banks" },
   { key: "JOB", label: "Jobs" },
   { key: "GOVERNMENT_SERVICE", label: "Govt Services" },
+  { key: "HOSPITAL", label: "Hospitals" },
+  { key: "MUTUAL_FUND", label: "Mutual Funds" },
+  { key: "NEPSE", label: "Stocks" },
+  { key: "INSURANCE", label: "Insurance" },
   { key: "BLOG", label: "Blog" },
 ] as const;
 
@@ -304,6 +308,228 @@ export default async function SearchPage({
                 author: p.author?.name ?? null,
                 readTime: `${p.readTimeMin} min read`,
                 publishedAt: p.publishedAt.toISOString().split("T")[0],
+              },
+            })),
+          ),
+      );
+    }
+    if (wantsAll || activeModule === "BANK") {
+      tasks.push(
+        db.bank
+          .findMany({
+            where: {
+              isPublished: true,
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { shortName: { contains: q, mode: "insensitive" } },
+                { headquarters: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 25,
+          })
+          .then((rows) =>
+            rows.map((b) => ({
+              type: "BANK",
+              id: b.id,
+              slug: b.slug,
+              title: b.name,
+              description: b.description,
+              url: `/banks/${b.slug}`,
+              image: b.logo ?? null,
+              meta: {
+                shortName: b.shortName,
+                type: b.type,
+                headquarters: b.headquarters,
+              },
+            })),
+          ),
+      );
+    }
+    if (wantsAll || activeModule === "JOB") {
+      tasks.push(
+        db.job
+          .findMany({
+            where: {
+              isPublished: true,
+              OR: [
+                { title: { contains: q, mode: "insensitive" } },
+                { company: { contains: q, mode: "insensitive" } },
+                { location: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 25,
+          })
+          .then((rows) =>
+            rows.map((j) => ({
+              type: "JOB",
+              id: j.id,
+              slug: j.slug,
+              title: j.title,
+              description: j.description,
+              url: `/jobs/${j.slug}`,
+              image: j.companyLogo ?? null,
+              meta: {
+                company: j.company,
+                location: j.location,
+                jobType: j.jobType,
+              },
+            })),
+          ),
+      );
+    }
+    if (wantsAll || activeModule === "GOVERNMENT_SERVICE") {
+      tasks.push(
+        db.governmentService
+          .findMany({
+            where: {
+              isPublished: true,
+              OR: [
+                { title: { contains: q, mode: "insensitive" } },
+                { ministry: { contains: q, mode: "insensitive" } },
+                { department: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 25,
+          })
+          .then((rows) =>
+            rows.map((g) => ({
+              type: "GOVERNMENT_SERVICE",
+              id: g.id,
+              slug: g.slug,
+              title: g.title,
+              description: g.description,
+              url: `/government/${g.slug}`,
+              image: null,
+              meta: {
+                category: g.category,
+                ministry: g.ministry,
+              },
+            })),
+          ),
+      );
+    }
+    if (wantsAll || activeModule === "HOSPITAL") {
+      tasks.push(
+        db.hospital
+          .findMany({
+            where: {
+              isPublished: true,
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { shortName: { contains: q, mode: "insensitive" } },
+                { city: { contains: q, mode: "insensitive" } },
+                { district: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 25,
+          })
+          .then((rows) =>
+            rows.map((h) => ({
+              type: "HOSPITAL",
+              id: h.id,
+              slug: h.slug,
+              title: h.shortName ? `${h.name} (${h.shortName})` : h.name,
+              description: h.description,
+              url: `/hospitals/${h.slug}`,
+              image: h.logo ?? null,
+              meta: {
+                type: h.type,
+                location: [h.city, h.district].filter(Boolean).join(", "),
+                bedCount: h.bedCount,
+              },
+            })),
+          ),
+      );
+    }
+    if (wantsAll || activeModule === "MUTUAL_FUND") {
+      tasks.push(
+        db.mutualFund
+          .findMany({
+            where: {
+              isPublished: true,
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { schemeCode: { contains: q, mode: "insensitive" } },
+                { fundManager: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 25,
+          })
+          .then((rows) =>
+            rows.map((m) => ({
+              type: "MUTUAL_FUND",
+              id: m.id,
+              slug: m.slug,
+              title: m.schemeCode ? `${m.name} (${m.schemeCode})` : m.name,
+              description: m.description,
+              url: `/mutual-funds/${m.slug}`,
+              image: null,
+              meta: {
+                manager: m.fundManager,
+                nav: m.nav != null ? `Rs. ${m.nav.toFixed(2)}` : null,
+              },
+            })),
+          ),
+      );
+    }
+    if (wantsAll || activeModule === "NEPSE") {
+      tasks.push(
+        db.nepseStock
+          .findMany({
+            where: {
+              isPublished: true,
+              OR: [
+                { symbol: { contains: q, mode: "insensitive" } },
+                { companyName: { contains: q, mode: "insensitive" } },
+                { sector: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 25,
+          })
+          .then((rows) =>
+            rows.map((s) => ({
+              type: "NEPSE",
+              id: s.id,
+              slug: s.slug,
+              title: `${s.symbol} — ${s.companyName}`,
+              description: s.description,
+              url: `/nepse/${s.slug}`,
+              image: null,
+              meta: {
+                symbol: s.symbol,
+                sector: s.sector.replace(/_/g, " "),
+                ltp: s.ltp != null ? `Rs. ${s.ltp.toFixed(1)}` : null,
+              },
+            })),
+          ),
+      );
+    }
+    if (wantsAll || activeModule === "INSURANCE") {
+      tasks.push(
+        db.insuranceCompany
+          .findMany({
+            where: {
+              isPublished: true,
+              OR: [
+                { name: { contains: q, mode: "insensitive" } },
+                { shortName: { contains: q, mode: "insensitive" } },
+                { headquarters: { contains: q, mode: "insensitive" } },
+              ],
+            },
+            take: 25,
+          })
+          .then((rows) =>
+            rows.map((i) => ({
+              type: "INSURANCE",
+              id: i.id,
+              slug: i.slug,
+              title: `${i.name} (${i.shortName})`,
+              description: i.description,
+              url: `/insurance/${i.slug}`,
+              image: i.logo ?? null,
+              meta: {
+                type: i.type.replace(/_/g, " "),
+                claimRatio: i.claimSettlementRatio != null ? `${i.claimSettlementRatio}%` : null,
               },
             })),
           ),

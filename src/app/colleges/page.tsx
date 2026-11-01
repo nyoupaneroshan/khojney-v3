@@ -20,7 +20,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { NEPAL_PROVINCES, NEPAL_DISTRICTS } from "@/lib/constants";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
-import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { buildMetadata, MODULE_KEYWORDS, buildBreadcrumbSchema, buildItemListSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/khojney/json-ld";
 import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
@@ -124,8 +125,25 @@ export default async function CollegesListPage({
     minRating > 0 ? String(minRating) : "",
   ].filter(Boolean).length;
 
+  const breadcrumbLd = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Colleges", url: BASE_PATH },
+  ]);
+
+  const itemListLd = buildItemListSchema({
+    name: "Colleges in Nepal",
+    description: "Browse, compare, and review top colleges across Nepal.",
+    items: colleges.map((c) => ({
+      name: c.name,
+      url: `/colleges/${c.slug}`,
+      image: c.logo || c.coverImage || null,
+    })),
+  });
+
   return (
     <AppShell user={user}>
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={itemListLd} />
       <ListPageHeader
         title="Colleges in Nepal"
         description="Browse, compare, and review top colleges across Nepal. Filter by location, affiliation, type, and rating to find the right fit."

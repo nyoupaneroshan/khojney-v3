@@ -22,6 +22,8 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 
+// Force HMR reload with Phase 3 models
+
 // ── Cache tags (used by revalidateTag) ─────────────────────────────────────
 export const CACHE_TAGS = {
   categories: "categories",
@@ -33,6 +35,10 @@ export const CACHE_TAGS = {
   featuredGovernment: "featured-government",
   featuredSchools: "featured-schools",
   featuredUniversities: "featured-universities",
+  featuredHospitals: "featured-hospitals",
+  featuredMutualFunds: "featured-mutual-funds",
+  featuredNepse: "featured-nepse",
+  featuredInsurance: "featured-insurance",
   featuredBlog: "featured-blog",
   trendingSearches: "trending-searches",
   blogTags: "blog-tags",
@@ -370,7 +376,7 @@ export const getCachedBlogTags = unstable_cache(
 /** Homepage stats (counts for each module). Cached 1 hour. */
 export const getCachedHomepageStats = unstable_cache(
   async () => {
-    const [colleges, schools, universities, exams, scholarships, blogPosts, banks, jobs, government] =
+    const [colleges, schools, universities, exams, scholarships, blogPosts, banks, jobs, government, hospitals, mutualFunds, nepseStocks, insurance] =
       await Promise.all([
         db.college.count({ where: { isPublished: true } }),
         db.school.count({ where: { isPublished: true } }),
@@ -381,6 +387,10 @@ export const getCachedHomepageStats = unstable_cache(
         db.bank.count({ where: { isPublished: true } }),
         db.job.count({ where: { isPublished: true } }),
         db.governmentService.count({ where: { isPublished: true } }),
+        db.hospital.count({ where: { isPublished: true } }),
+        db.mutualFund.count({ where: { isPublished: true } }),
+        db.nepseStock.count({ where: { isPublished: true } }),
+        db.insuranceCompany.count({ where: { isPublished: true } }),
       ]);
     return {
       colleges,
@@ -392,12 +402,141 @@ export const getCachedHomepageStats = unstable_cache(
       banks,
       jobs,
       government,
+      hospitals,
+      mutualFunds,
+      nepseStocks,
+      insurance,
     };
   },
   ["homepage-stats"],
   {
     revalidate: ONE_HOUR,
     tags: [CACHE_TAGS.homepageStats],
+  }
+);
+
+/** Featured hospitals for directory and homepage. Cached 1 hour. */
+export const getCachedFeaturedHospitals = unstable_cache(
+  async (limit = 6) => {
+    return db.hospital.findMany({
+      where: { isFeatured: true, isPublished: true },
+      orderBy: [{ rating: "desc" }, { bedCount: "desc" }],
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        shortName: true,
+        type: true,
+        city: true,
+        province: true,
+        district: true,
+        phone: true,
+        emergencyPhone: true,
+        bedCount: true,
+        hasEmergency: true,
+        hasAmbulance: true,
+        rating: true,
+        reviewCount: true,
+        isFeatured: true,
+      },
+    });
+  },
+  ["featured-hospitals"],
+  {
+    revalidate: ONE_HOUR,
+    tags: [CACHE_TAGS.featuredHospitals],
+  }
+);
+
+/** Featured mutual funds. Cached 1 hour. */
+export const getCachedFeaturedMutualFunds = unstable_cache(
+  async (limit = 6) => {
+    return db.mutualFund.findMany({
+      where: { isFeatured: true, isPublished: true },
+      orderBy: [{ nav: "desc" }],
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        schemeCode: true,
+        fundManager: true,
+        fundType: true,
+        category: true,
+        nav: true,
+        fundSize: true,
+        dividendYield: true,
+        latestDividend: true,
+        isFeatured: true,
+      },
+    });
+  },
+  ["featured-mutual-funds"],
+  {
+    revalidate: ONE_HOUR,
+    tags: [CACHE_TAGS.featuredMutualFunds],
+  }
+);
+
+/** Featured NEPSE stocks. Cached 1 hour. */
+export const getCachedFeaturedNepseStocks = unstable_cache(
+  async (limit = 6) => {
+    return db.nepseStock.findMany({
+      where: { isFeatured: true, isPublished: true },
+      orderBy: [{ marketCap: "desc" }],
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        symbol: true,
+        companyName: true,
+        sector: true,
+        ltp: true,
+        pointChange: true,
+        percentChange: true,
+        marketCap: true,
+        peRatio: true,
+        isFeatured: true,
+      },
+    });
+  },
+  ["featured-nepse"],
+  {
+    revalidate: ONE_HOUR,
+    tags: [CACHE_TAGS.featuredNepse],
+  }
+);
+
+/** Featured Insurance companies. Cached 1 hour. */
+export const getCachedFeaturedInsurance = unstable_cache(
+  async (limit = 6) => {
+    return db.insuranceCompany.findMany({
+      where: { isFeatured: true, isPublished: true },
+      orderBy: [{ claimSettlementRatio: "desc" }, { rating: "desc" }],
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        shortName: true,
+        type: true,
+        headquarters: true,
+        establishedYear: true,
+        claimSettlementRatio: true,
+        solvencyRatio: true,
+        paidUpCapital: true,
+        branchCount: true,
+        rating: true,
+        reviewCount: true,
+        isFeatured: true,
+      },
+    });
+  },
+  ["featured-insurance"],
+  {
+    revalidate: ONE_HOUR,
+    tags: [CACHE_TAGS.featuredInsurance],
   }
 );
 

@@ -15,6 +15,13 @@ import {
   Plus,
   ArrowRight,
   Activity,
+  Landmark,
+  Briefcase,
+  Building2,
+  HeartPulse,
+  Coins,
+  LineChart,
+  ShieldCheck,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/admin-utils";
 
@@ -38,6 +45,13 @@ async function getStats() {
     posts,
     users,
     examAttempts,
+    banks,
+    jobs,
+    government,
+    hospitals,
+    mutualFunds,
+    nepseStocks,
+    insurance,
   ] = await Promise.all([
     db.college.count(),
     db.school.count(),
@@ -47,51 +61,66 @@ async function getStats() {
     db.blogPost.count(),
     db.user.count(),
     db.examAttempt.count(),
+    db.bank.count(),
+    db.job.count(),
+    db.governmentService.count(),
+    db.hospital.count(),
+    db.mutualFund.count(),
+    db.nepseStock.count(),
+    db.insuranceCompany.count(),
   ]);
 
-  return { colleges, schools, universities, scholarships, exams, posts, users, examAttempts };
+  return {
+    colleges,
+    schools,
+    universities,
+    scholarships,
+    exams,
+    posts,
+    users,
+    examAttempts,
+    banks,
+    jobs,
+    government,
+    hospitals,
+    mutualFunds,
+    nepseStocks,
+    insurance,
+  };
 }
 
 async function getRecentActivity() {
-  // Fetch latest 10 records from each module, then merge and sort by createdAt.
-  const [colleges, schools, universities, scholarships, exams, posts, users] =
-    await Promise.all([
-      db.college.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, name: true, createdAt: true },
-      }),
-      db.school.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, name: true, createdAt: true },
-      }),
-      db.university.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, name: true, createdAt: true },
-      }),
-      db.scholarship.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, title: true, createdAt: true },
-      }),
-      db.exam.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, title: true, createdAt: true },
-      }),
-      db.blogPost.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, title: true, createdAt: true },
-      }),
-      db.user.findMany({
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: { id: true, name: true, email: true, createdAt: true },
-      }),
-    ]);
+  const [
+    colleges,
+    schools,
+    universities,
+    scholarships,
+    exams,
+    posts,
+    users,
+    banks,
+    jobs,
+    government,
+    hospitals,
+    mutualFunds,
+    nepseStocks,
+    insurance,
+  ] = await Promise.all([
+    db.college.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, name: true, createdAt: true } }),
+    db.school.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, name: true, createdAt: true } }),
+    db.university.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, name: true, createdAt: true } }),
+    db.scholarship.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, title: true, createdAt: true } }),
+    db.exam.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, title: true, createdAt: true } }),
+    db.blogPost.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, title: true, createdAt: true } }),
+    db.user.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, name: true, email: true, createdAt: true } }),
+    db.bank.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, name: true, createdAt: true } }),
+    db.job.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, title: true, createdAt: true } }),
+    db.governmentService.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, title: true, createdAt: true } }),
+    db.hospital.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, name: true, createdAt: true } }),
+    db.mutualFund.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, name: true, createdAt: true } }),
+    db.nepseStock.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, symbol: true, companyName: true, createdAt: true } }),
+    db.insuranceCompany.findMany({ orderBy: { createdAt: "desc" }, take: 3, select: { id: true, name: true, createdAt: true } }),
+  ]);
 
   type Activity = {
     id: string;
@@ -102,55 +131,20 @@ async function getRecentActivity() {
   };
 
   const all: Activity[] = [
-    ...colleges.map((c) => ({
-      id: c.id,
-      label: c.name,
-      type: "College",
-      href: `/admin/colleges/${c.id}`,
-      createdAt: c.createdAt,
-    })),
-    ...schools.map((s) => ({
-      id: s.id,
-      label: s.name,
-      type: "School",
-      href: `/admin/schools/${s.id}`,
-      createdAt: s.createdAt,
-    })),
-    ...universities.map((u) => ({
-      id: u.id,
-      label: u.name,
-      type: "University",
-      href: `/admin/universities/${u.id}`,
-      createdAt: u.createdAt,
-    })),
-    ...scholarships.map((s) => ({
-      id: s.id,
-      label: s.title,
-      type: "Scholarship",
-      href: `/admin/scholarships/${s.id}`,
-      createdAt: s.createdAt,
-    })),
-    ...exams.map((e) => ({
-      id: e.id,
-      label: e.title,
-      type: "Exam",
-      href: `/admin/exams/${e.id}`,
-      createdAt: e.createdAt,
-    })),
-    ...posts.map((p) => ({
-      id: p.id,
-      label: p.title,
-      type: "Blog Post",
-      href: `/admin/blog/${p.id}`,
-      createdAt: p.createdAt,
-    })),
-    ...users.map((u) => ({
-      id: u.id,
-      label: u.name ?? u.email,
-      type: "User",
-      href: `/admin/users`,
-      createdAt: u.createdAt,
-    })),
+    ...colleges.map((c) => ({ id: c.id, label: c.name, type: "College", href: `/admin/colleges/${c.id}`, createdAt: c.createdAt })),
+    ...schools.map((s) => ({ id: s.id, label: s.name, type: "School", href: `/admin/schools/${s.id}`, createdAt: s.createdAt })),
+    ...universities.map((u) => ({ id: u.id, label: u.name, type: "University", href: `/admin/universities/${u.id}`, createdAt: u.createdAt })),
+    ...scholarships.map((s) => ({ id: s.id, label: s.title, type: "Scholarship", href: `/admin/scholarships/${s.id}`, createdAt: s.createdAt })),
+    ...exams.map((e) => ({ id: e.id, label: e.title, type: "Exam", href: `/admin/exams/${e.id}`, createdAt: e.createdAt })),
+    ...posts.map((p) => ({ id: p.id, label: p.title, type: "Blog Post", href: `/admin/blog/${p.id}`, createdAt: p.createdAt })),
+    ...users.map((u) => ({ id: u.id, label: u.name ?? u.email, type: "User", href: `/admin/users`, createdAt: u.createdAt })),
+    ...banks.map((b) => ({ id: b.id, label: b.name, type: "Bank", href: `/admin/banks/${b.id}`, createdAt: b.createdAt })),
+    ...jobs.map((j) => ({ id: j.id, label: j.title, type: "Job", href: `/admin/jobs/${j.id}`, createdAt: j.createdAt })),
+    ...government.map((g) => ({ id: g.id, label: g.title, type: "Govt Service", href: `/admin/government/${g.id}`, createdAt: g.createdAt })),
+    ...hospitals.map((h) => ({ id: h.id, label: h.name, type: "Hospital", href: `/admin/hospitals/${h.id}`, createdAt: h.createdAt })),
+    ...mutualFunds.map((m) => ({ id: m.id, label: m.name, type: "Mutual Fund", href: `/admin/mutual-funds/${m.id}`, createdAt: m.createdAt })),
+    ...nepseStocks.map((n) => ({ id: n.id, label: `${n.symbol} - ${n.companyName}`, type: "Stock", href: `/admin/nepse/${n.id}`, createdAt: n.createdAt })),
+    ...insurance.map((i) => ({ id: i.id, label: i.name, type: "Insurance", href: `/admin/insurance/${i.id}`, createdAt: i.createdAt })),
   ];
 
   return all.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 10);
@@ -165,16 +159,27 @@ export default async function AdminDashboardPage() {
     { label: "Universities", value: stats.universities, href: "/admin/universities", icon: UniversityIcon, color: "text-purple-600 bg-purple-50" },
     { label: "Scholarships", value: stats.scholarships, href: "/admin/scholarships", icon: Award, color: "text-emerald-600 bg-emerald-50" },
     { label: "Exams", value: stats.exams, href: "/admin/exams", icon: FileText, color: "text-amber-600 bg-amber-50" },
+    { label: "Banks", value: stats.banks, href: "/admin/banks", icon: Landmark, color: "text-cyan-600 bg-cyan-50" },
+    { label: "Jobs", value: stats.jobs, href: "/admin/jobs", icon: Briefcase, color: "text-yellow-600 bg-yellow-50" },
+    { label: "Govt Services", value: stats.government, href: "/admin/government", icon: Building2, color: "text-indigo-600 bg-indigo-50" },
+    { label: "Hospitals", value: stats.hospitals, href: "/admin/hospitals", icon: HeartPulse, color: "text-rose-600 bg-rose-50" },
+    { label: "Mutual Funds", value: stats.mutualFunds, href: "/admin/mutual-funds", icon: Coins, color: "text-teal-600 bg-teal-50" },
+    { label: "NEPSE Stocks", value: stats.nepseStocks, href: "/admin/nepse", icon: LineChart, color: "text-emerald-700 bg-emerald-50" },
+    { label: "Insurance", value: stats.insurance, href: "/admin/insurance", icon: ShieldCheck, color: "text-blue-700 bg-blue-50" },
     { label: "Blog Posts", value: stats.posts, href: "/admin/blog", icon: Newspaper, color: "text-orange-600 bg-orange-50" },
     { label: "Users", value: stats.users, href: "/admin/users", icon: Users, color: "text-teal-600 bg-teal-50" },
-    { label: "Exam Attempts", value: stats.examAttempts, href: "/admin/exams", icon: ListChecks, color: "text-rose-600 bg-rose-50" },
+    { label: "Exam Attempts", value: stats.examAttempts, href: "/admin/exams", icon: ListChecks, color: "text-slate-600 bg-slate-50" },
   ];
 
   const quickActions = [
+    { label: "Add Hospital", href: "/admin/hospitals/new", icon: HeartPulse },
+    { label: "Add Stock", href: "/admin/nepse/new", icon: LineChart },
+    { label: "Add Mutual Fund", href: "/admin/mutual-funds/new", icon: Coins },
+    { label: "Add Insurance", href: "/admin/insurance/new", icon: ShieldCheck },
+    { label: "Add Bank", href: "/admin/banks/new", icon: Landmark },
     { label: "Add College", href: "/admin/colleges/new", icon: GraduationCap },
     { label: "Add Exam", href: "/admin/exams/new", icon: FileText },
     { label: "Add Blog Post", href: "/admin/blog/new", icon: Newspaper },
-    { label: "Add Scholarship", href: "/admin/scholarships/new", icon: Award },
   ];
 
   return (

@@ -12,6 +12,13 @@ import {
   Clock,
   Calendar,
   Star,
+  Landmark,
+  Briefcase,
+  Building,
+  HeartPulse,
+  Coins,
+  LineChart,
+  ShieldCheck,
 } from "lucide-react";
 
 interface SearchHit {
@@ -29,12 +36,19 @@ const TYPE_META: Record<
   string,
   { label: string; icon: React.ComponentType<{ className?: string }>; color: string }
 > = {
-  EXAM: { label: "Exam", icon: FileText, color: "bg-red-100 text-red-700" },
-  COLLEGE: { label: "College", icon: Building2, color: "bg-blue-100 text-blue-700" },
-  SCHOOL: { label: "School", icon: School, color: "bg-teal-100 text-teal-700" },
-  UNIVERSITY: { label: "University", icon: GraduationCap, color: "bg-purple-100 text-purple-700" },
-  SCHOLARSHIP: { label: "Scholarship", icon: Award, color: "bg-emerald-100 text-emerald-700" },
-  BLOG: { label: "Article", icon: Newspaper, color: "bg-amber-100 text-amber-700" },
+  EXAM: { label: "Exam", icon: FileText, color: "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400" },
+  COLLEGE: { label: "College", icon: Building2, color: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400" },
+  SCHOOL: { label: "School", icon: School, color: "bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-400" },
+  UNIVERSITY: { label: "University", icon: GraduationCap, color: "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400" },
+  SCHOLARSHIP: { label: "Scholarship", icon: Award, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400" },
+  BLOG: { label: "Article", icon: Newspaper, color: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400" },
+  BANK: { label: "Bank", icon: Landmark, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-400" },
+  JOB: { label: "Job", icon: Briefcase, color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/50 dark:text-yellow-400" },
+  GOVERNMENT_SERVICE: { label: "Govt Service", icon: Building, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400" },
+  HOSPITAL: { label: "Hospital", icon: HeartPulse, color: "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400" },
+  MUTUAL_FUND: { label: "Mutual Fund", icon: Coins, color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400" },
+  NEPSE: { label: "Stock", icon: LineChart, color: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-400" },
+  INSURANCE: { label: "Insurance", icon: ShieldCheck, color: "bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-400" },
 };
 
 export function SearchResults({ results }: { results: SearchHit[] }) {

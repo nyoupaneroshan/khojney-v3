@@ -24,6 +24,10 @@ const MODULE_LABELS: Record<string, string> = {
   BANK: "Bank",
   JOB: "Job",
   GOVERNMENT_SERVICE: "Government Service",
+  HOSPITAL: "Hospital",
+  MUTUAL_FUND: "Mutual Fund",
+  NEPSE: "Stock",
+  INSURANCE: "Insurance",
 };
 
 // 30 searches per minute per IP (or per user if logged in).
@@ -116,6 +120,18 @@ export async function GET(req: NextRequest) {
   }
   if (wantsAll || moduleParam === "GOVERNMENT_SERVICE") {
     tasks.push(searchGovernmentServices(q));
+  }
+  if (wantsAll || moduleParam === "HOSPITAL") {
+    tasks.push(searchHospitals(q));
+  }
+  if (wantsAll || moduleParam === "MUTUAL_FUND") {
+    tasks.push(searchMutualFunds(q));
+  }
+  if (wantsAll || moduleParam === "NEPSE") {
+    tasks.push(searchNepseStocks(q));
+  }
+  if (wantsAll || moduleParam === "INSURANCE") {
+    tasks.push(searchInsurance(q));
   }
 
   const allResults = (await Promise.all(tasks)).flat();
@@ -549,3 +565,177 @@ async function searchGovernmentServices(q: string): Promise<SearchHit[]> {
     },
   }));
 }
+
+async function searchHospitals(q: string): Promise<SearchHit[]> {
+  const rows = await db.hospital.findMany({
+    where: {
+      isPublished: true,
+      OR: [
+        { name: { contains: q, mode: "insensitive" as const } },
+        { shortName: { contains: q, mode: "insensitive" as const } },
+        { description: { contains: q, mode: "insensitive" as const } },
+        { city: { contains: q, mode: "insensitive" as const } },
+        { district: { contains: q, mode: "insensitive" as const } },
+      ],
+    },
+    take: 25,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      shortName: true,
+      description: true,
+      type: true,
+      city: true,
+      district: true,
+      bedCount: true,
+      hasEmergency: true,
+      rating: true,
+      logo: true,
+    },
+  });
+  return rows.map((h) => ({
+    type: "HOSPITAL",
+    id: h.id,
+    slug: h.slug,
+    title: h.shortName ? `${h.name} (${h.shortName})` : h.name,
+    description: h.description,
+    url: `/hospitals/${h.slug}`,
+    image: h.logo ?? null,
+    meta: {
+      type: h.type,
+      location: [h.city, h.district].filter(Boolean).join(", "),
+      bedCount: h.bedCount,
+      hasEmergency: h.hasEmergency ? "24/7 ER" : null,
+      rating: h.rating > 0 ? h.rating.toFixed(1) : null,
+    },
+  }));
+}
+
+async function searchMutualFunds(q: string): Promise<SearchHit[]> {
+  const rows = await db.mutualFund.findMany({
+    where: {
+      isPublished: true,
+      OR: [
+        { name: { contains: q, mode: "insensitive" as const } },
+        { schemeCode: { contains: q, mode: "insensitive" as const } },
+        { fundManager: { contains: q, mode: "insensitive" as const } },
+        { sponsor: { contains: q, mode: "insensitive" as const } },
+      ],
+    },
+    take: 25,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      schemeCode: true,
+      description: true,
+      fundManager: true,
+      fundType: true,
+      category: true,
+      nav: true,
+      fundSize: true,
+    },
+  });
+  return rows.map((m) => ({
+    type: "MUTUAL_FUND",
+    id: m.id,
+    slug: m.slug,
+    title: m.schemeCode ? `${m.name} (${m.schemeCode})` : m.name,
+    description: m.description,
+    url: `/mutual-funds/${m.slug}`,
+    image: null,
+    meta: {
+      fundManager: m.fundManager,
+      fundType: m.fundType.replace(/_/g, " "),
+      category: m.category,
+      nav: m.nav != null ? `Rs. ${m.nav.toFixed(2)}` : null,
+      fundSize: m.fundSize != null ? `${m.fundSize} Cr` : null,
+    },
+  }));
+}
+
+async function searchNepseStocks(q: string): Promise<SearchHit[]> {
+  const rows = await db.nepseStock.findMany({
+    where: {
+      isPublished: true,
+      OR: [
+        { symbol: { contains: q, mode: "insensitive" as const } },
+        { companyName: { contains: q, mode: "insensitive" as const } },
+        { sector: { contains: q, mode: "insensitive" as const } },
+      ],
+    },
+    take: 25,
+    select: {
+      id: true,
+      slug: true,
+      symbol: true,
+      companyName: true,
+      description: true,
+      sector: true,
+      ltp: true,
+      pointChange: true,
+      percentChange: true,
+      marketCap: true,
+    },
+  });
+  return rows.map((s) => ({
+    type: "NEPSE",
+    id: s.id,
+    slug: s.slug,
+    title: `${s.symbol} — ${s.companyName}`,
+    description: s.description,
+    url: `/nepse/${s.slug}`,
+    image: null,
+    meta: {
+      symbol: s.symbol,
+      sector: s.sector.replace(/_/g, " "),
+      ltp: s.ltp != null ? `Rs. ${s.ltp.toFixed(1)}` : null,
+      change: s.percentChange != null ? `${s.percentChange >= 0 ? "+" : ""}${s.percentChange}%` : null,
+      marketCap: s.marketCap != null ? `${s.marketCap} Cr` : null,
+    },
+  }));
+}
+
+async function searchInsurance(q: string): Promise<SearchHit[]> {
+  const rows = await db.insuranceCompany.findMany({
+    where: {
+      isPublished: true,
+      OR: [
+        { name: { contains: q, mode: "insensitive" as const } },
+        { shortName: { contains: q, mode: "insensitive" as const } },
+        { description: { contains: q, mode: "insensitive" as const } },
+        { headquarters: { contains: q, mode: "insensitive" as const } },
+      ],
+    },
+    take: 25,
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      shortName: true,
+      description: true,
+      type: true,
+      headquarters: true,
+      claimSettlementRatio: true,
+      branchCount: true,
+      logo: true,
+    },
+  });
+  return rows.map((i) => ({
+    type: "INSURANCE",
+    id: i.id,
+    slug: i.slug,
+    title: `${i.name} (${i.shortName})`,
+    description: i.description,
+    url: `/insurance/${i.slug}`,
+    image: i.logo ?? null,
+    meta: {
+      type: i.type.replace(/_/g, " "),
+      headquarters: i.headquarters,
+      claimRatio: i.claimSettlementRatio != null ? `${i.claimSettlementRatio}%` : null,
+      branches: i.branchCount != null ? `${i.branchCount} branches` : null,
+    },
+  }));
+}
+

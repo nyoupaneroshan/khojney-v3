@@ -83,6 +83,34 @@ const ALL_LINKS: Record<string, CrossLink[]> = {
     { label: "Loksewa Preparation Guide", href: "/blog/loksewa-preparation-tips-nepal-complete-study-guide-2025" },
     { label: "Driving License Guide", href: "/blog/dotm-exam-nepal-driving-license-complete-guide-2025" },
   ],
+  hospitals: [
+    { label: "Emergency Numbers", href: "/hospitals?emergency=true" },
+    { label: "Banks", href: "/banks" },
+    { label: "Government Services", href: "/government" },
+    { label: "Insurance", href: "/insurance" },
+    { label: "Jobs in Healthcare", href: "/jobs?category=HEALTHCARE" },
+  ],
+  mutualFunds: [
+    { label: "NEPSE Stocks", href: "/nepse" },
+    { label: "Banks of Nepal", href: "/banks" },
+    { label: "Insurance Providers", href: "/insurance" },
+    { label: "Open-Ended Funds", href: "/mutual-funds?type=OPEN_ENDED" },
+    { label: "Government Services", href: "/government" },
+  ],
+  nepse: [
+    { label: "Mutual Funds", href: "/mutual-funds" },
+    { label: "Commercial Banks", href: "/nepse?sector=COMMERCIAL_BANK" },
+    { label: "Hydropower Shares", href: "/nepse?sector=HYDROPOWER" },
+    { label: "Banks of Nepal", href: "/banks" },
+    { label: "Insurance Companies", href: "/insurance" },
+  ],
+  insurance: [
+    { label: "Life Insurance", href: "/insurance?type=LIFE" },
+    { label: "Non-Life Insurance", href: "/insurance?type=NON_LIFE" },
+    { label: "Banks of Nepal", href: "/banks" },
+    { label: "NEPSE Stocks", href: "/nepse" },
+    { label: "Mutual Funds", href: "/mutual-funds" },
+  ],
 };
 
 interface CrossLinkFooterProps {
