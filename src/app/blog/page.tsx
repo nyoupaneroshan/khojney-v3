@@ -176,34 +176,34 @@ export default async function BlogListPage({
 
           {/* Featured post (only on default view page 1) */}
           {featuredPost && (
-            <div className="mb-10">
-              <Card className="card-hover overflow-hidden">
-                <div className="grid gap-0 md:grid-cols-2">
+            <div className="mb-12">
+              <div className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:border-primary/40 hover:shadow-md transition-all">
+                <div className="grid gap-0 md:grid-cols-12 items-stretch">
                   {featuredPost.coverImage && (
-                    <div className="aspect-video overflow-hidden bg-muted md:aspect-auto md:h-full">
+                    <div className="relative aspect-video overflow-hidden bg-muted md:aspect-auto md:h-full md:col-span-7">
                       <img
                         src={featuredPost.coverImage}
                         alt={featuredPost.title}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                   )}
-                  <div className="flex flex-col justify-center gap-3 p-6 sm:p-8">
+                  <div className={cn("flex flex-col justify-center gap-4 p-6 sm:p-10", featuredPost.coverImage ? "md:col-span-5" : "md:col-span-12")}>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="gap-1">
-                        <Newspaper className="h-3 w-3" /> Featured
+                      <Badge variant="secondary" className="gap-1 font-semibold text-xs tracking-wider uppercase bg-primary/10 text-primary border-primary/20">
+                        <Newspaper className="h-3 w-3" /> Lead Story
                       </Badge>
                       {featuredPost.category && (
                         <EntityBadge variant="outline" value={featuredPost.category.name} />
                       )}
                     </div>
-                    <h2 className="text-2xl font-bold leading-tight sm:text-3xl">
-                      <Link href={`/blog/${featuredPost.slug}`} className="hover:text-primary">
+                    <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl leading-snug">
+                      <Link href={`/blog/${featuredPost.slug}`} className="hover:text-primary transition-colors">
                         {featuredPost.title}
                       </Link>
                     </h2>
                     {featuredPost.excerpt && (
-                      <p className="line-clamp-3 text-sm text-muted-foreground sm:text-base">
+                      <p className="line-clamp-3 text-sm text-muted-foreground sm:text-base leading-relaxed">
                         {featuredPost.excerpt}
                       </p>
                     )}
@@ -213,16 +213,16 @@ export default async function BlogListPage({
                       readTime={featuredPost.readTimeMin}
                       views={featuredPost.views}
                     />
-                    <div>
-                      <Button asChild size="sm">
+                    <div className="pt-2">
+                      <Button asChild size="sm" className="font-semibold gap-1.5 shadow-sm">
                         <Link href={`/blog/${featuredPost.slug}`}>
-                          Read article <ArrowRight className="h-3.5 w-3.5" />
+                          Read full guide <ArrowRight className="h-3.5 w-3.5" />
                         </Link>
                       </Button>
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
 
@@ -238,43 +238,54 @@ export default async function BlogListPage({
           ) : (
             <>
               {posts.length > 0 && (
-                <p className="mb-4 text-xs text-muted-foreground">
-                  {isDefaultView && featuredPost ? "Latest articles" : `Showing ${posts.length} of ${total} articles`}
-                </p>
+                <div className="mb-6 flex items-center justify-between pb-3 border-b border-border">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                    {isDefaultView && featuredPost ? "All Published Guides" : `Articles (${total})`}
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    Page {page} of {totalPages}
+                  </span>
+                </div>
               )}
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {posts.map((p) => (
-                  <Card key={p.id} className="card-hover flex flex-col overflow-hidden">
+                  <Card key={p.id} className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xs hover:border-primary/40 hover:shadow-md transition-all">
                     {p.coverImage && (
                       <div className="aspect-video overflow-hidden bg-muted">
                         <img
                           src={p.coverImage}
                           alt={p.title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       </div>
                     )}
                     <CardHeader className="pb-3">
                       {p.category && (
-                        <EntityBadge variant="outline" value={p.category.name} />
+                        <div className="mb-2">
+                          <EntityBadge variant="outline" value={p.category.name} />
+                        </div>
                       )}
-                      <h3 className="mt-2 text-base font-semibold leading-snug">
-                        <Link href={`/blog/${p.slug}`} className="line-clamp-2 hover:text-primary">
+                      <h3 className="text-base font-bold leading-snug">
+                        <Link href={`/blog/${p.slug}`} className="line-clamp-2 hover:text-primary transition-colors">
                           {p.title}
                         </Link>
                       </h3>
                     </CardHeader>
-                    <CardContent className="flex-1 space-y-3 pb-3">
+                    <CardContent className="flex-1 flex flex-col justify-between space-y-4 pb-4">
                       {p.excerpt && (
-                        <p className="line-clamp-3 text-sm text-muted-foreground">{p.excerpt}</p>
+                        <p className="line-clamp-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                          {p.excerpt}
+                        </p>
                       )}
-                      <PostMeta
-                        author={p.author?.name}
-                        publishedAt={p.publishedAt}
-                        readTime={p.readTimeMin}
-                        views={p.views}
-                        compact
-                      />
+                      <div className="pt-2 border-t border-border/40">
+                        <PostMeta
+                          author={p.author?.name}
+                          publishedAt={p.publishedAt}
+                          readTime={p.readTimeMin}
+                          views={p.views}
+                          compact
+                        />
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

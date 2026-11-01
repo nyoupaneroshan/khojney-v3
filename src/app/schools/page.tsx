@@ -29,7 +29,7 @@ const BASE_PATH = "/schools";
 const PAGE_SIZE = 12;
 
 export const metadata: Metadata = buildMetadata({
-  title: "Schools in Nepal 2025 — Best Primary, Secondary & Higher Secondary Schools",
+  title: "Schools in Nepal 2026 — Best Primary, Secondary & Higher Secondary Schools",
   description:
     "Browse primary, secondary, and higher-secondary schools in Nepal. Filter by level, province, district, affiliation, and rating. Find the best school for your child.",
   canonical: BASE_PATH,

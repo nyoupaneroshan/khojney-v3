@@ -34,6 +34,8 @@ interface Params {
 
 const SECTOR_LABELS: Record<string, string> = {
   COMMERCIAL_BANK: "Commercial Banks",
+  DEVELOPMENT_BANK: "Development Banks",
+  FINANCE: "Finance Companies",
   HYDROPOWER: "Hydropower",
   MICROFINANCE: "Microfinance",
   LIFE_INSURANCE: "Life Insurance",

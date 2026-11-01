@@ -27,7 +27,7 @@ const BASE_PATH = "/scholarships";
 const PAGE_SIZE = 12;
 
 export const metadata: Metadata = buildMetadata({
-  title: "Scholarships in Nepal & Abroad 2025 — Free Seats, SEE Toppers, UG & PG",
+  title: "Scholarships in Nepal & Abroad 2026 — Free Seats, SEE Toppers, UG & PG",
   description:
     "Discover scholarships for Nepali students — school, +2, bachelors, masters, and PhD. Filter by level, field, country, and deadline. Find free seats and merit scholarships.",
   canonical: BASE_PATH,
