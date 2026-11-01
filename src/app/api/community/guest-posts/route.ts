@@ -3,9 +3,30 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
-  const u = new URL(req.url); const status = u.searchParams.get("status")??"PUBLISHED";
-  if(status==="mine"){const s=await getSession();if(!s)return NextResponse.json({error:"Unauthorized"},{status:401});const p=await db.guestPost.findMany({where:{authorId:s.id},orderBy:{createdAt:"desc"}});return NextResponse.json({items:p});}
-  const w = status==="all"?{}:{status}; const p = await db.guestPost.findMany({where:w,orderBy:{createdAt:"desc"},include:{category:true}}); return NextResponse.json({items:p});
+  const u = new URL(req.url);
+  const statusParam = u.searchParams.get("status") ?? "PUBLISHED";
+  const s = await getSession();
+
+  if (statusParam === "mine") {
+    if (!s) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const p = await db.guestPost.findMany({
+      where: { authorId: s.id },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json({ items: p });
+  }
+
+  // Non-admins can only view PUBLISHED guest posts
+  const isAdmin = s && (s.role === "ADMIN" || s.role === "SUPER_ADMIN");
+  const status = isAdmin ? statusParam : "PUBLISHED";
+  const where = status === "all" ? {} : { status };
+
+  const p = await db.guestPost.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    include: { category: true },
+  });
+  return NextResponse.json({ items: p });
 }
 export async function POST(req: NextRequest) {
   const s = await getSession(); if(!s) return NextResponse.json({error:"Login required"},{status:401});

@@ -13,6 +13,11 @@ const VALID = [
   "BANK",
   "JOB",
   "GOVERNMENT_SERVICE",
+  "HOSPITAL",
+  "MUTUAL_FUND",
+  "NEPSE_STOCK",
+  "NEPSE",
+  "INSURANCE",
 ];
 
 const MAX_BOOKMARKS_RETURNED = 500;

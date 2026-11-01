@@ -3,11 +3,34 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
-  const u = new URL(req.url); const f = u.searchParams.get("filter")??"approved"; const s = await getSession();
-  if(f==="mine"){if(!s)return NextResponse.json({error:"Unauthorized"},{status:401});const i=await db.communityQuestion.findMany({where:{submitterId:s.id},orderBy:{createdAt:"desc"}});return NextResponse.json({items:i});}
-  const w = f==="approved"?{status:"APPROVED"}:{status:"PENDING"};
-  const i = await db.communityQuestion.findMany({where:w,orderBy:{upvotes:"desc"},take:50,include:{exam:{select:{title:true,slug:true}},category:{select:{name:true}}}});
-  return NextResponse.json({items:i});
+  const u = new URL(req.url);
+  const filter = u.searchParams.get("filter") ?? "approved";
+  const s = await getSession();
+
+  if (filter === "mine") {
+    if (!s) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const i = await db.communityQuestion.findMany({
+      where: { submitterId: s.id },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json({ items: i });
+  }
+
+  const isAdmin = s && (s.role === "ADMIN" || s.role === "SUPER_ADMIN");
+  // Non-admins can only see APPROVED community questions
+  const status = !isAdmin || filter === "approved" ? "APPROVED" : "PENDING";
+  const where = { status };
+
+  const i = await db.communityQuestion.findMany({
+    where,
+    orderBy: { upvotes: "desc" },
+    take: 50,
+    include: {
+      exam: { select: { title: true, slug: true } },
+      category: { select: { name: true } },
+    },
+  });
+  return NextResponse.json({ items: i });
 }
 export async function POST(req: NextRequest) {
   const s = await getSession(); if(!s) return NextResponse.json({error:"Login required"},{status:401});

@@ -23,6 +23,13 @@ import {
   Info,
   AlertTriangle,
   CheckCheck,
+  Landmark,
+  Briefcase,
+  Building,
+  HeartPulse,
+  PieChart,
+  BarChart3,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Tabs,
@@ -110,6 +117,14 @@ const ENTITY_META: Record<string, { label: string; path: string; icon: React.Com
   UNIVERSITY: { label: "University", path: "/universities", icon: Compass },
   SCHOLARSHIP: { label: "Scholarship", path: "/scholarships", icon: Award },
   POST: { label: "Article", path: "/blog", icon: BookOpen },
+  BANK: { label: "Bank", path: "/banks", icon: Landmark },
+  JOB: { label: "Job", path: "/jobs", icon: Briefcase },
+  GOVERNMENT_SERVICE: { label: "Govt Service", path: "/government", icon: Building },
+  HOSPITAL: { label: "Hospital", path: "/hospitals", icon: HeartPulse },
+  MUTUAL_FUND: { label: "Mutual Fund", path: "/mutual-funds", icon: PieChart },
+  NEPSE_STOCK: { label: "NEPSE Stock", path: "/nepse", icon: BarChart3 },
+  NEPSE: { label: "NEPSE Stock", path: "/nepse", icon: BarChart3 },
+  INSURANCE: { label: "Insurance", path: "/insurance", icon: ShieldCheck },
 };
 
 const ACHIEVEMENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {

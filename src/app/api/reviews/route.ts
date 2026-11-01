@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
 
-const ENTITY_TABLE: Record<string, "College" | "School" | "University" | "Bank"> = {
+const ENTITY_TABLE: Record<
+  string,
+  "College" | "School" | "University" | "Bank" | "Hospital" | "InsuranceCompany"
+> = {
   COLLEGE: "College",
   SCHOOL: "School",
   UNIVERSITY: "University",
   BANK: "Bank",
+  HOSPITAL: "Hospital",
+  INSURANCE: "InsuranceCompany",
 };
+
+const MAX_TITLE_LEN = 120;
+const MAX_COMMENT_LEN = 2000;
 
 export async function POST(req: NextRequest) {
   const user = await getSession();
@@ -32,6 +40,12 @@ export async function POST(req: NextRequest) {
   if (rating < 1 || rating > 5) {
     return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 });
   }
+  if (title && title.trim().length > MAX_TITLE_LEN) {
+    return NextResponse.json({ error: `Title cannot exceed ${MAX_TITLE_LEN} characters` }, { status: 400 });
+  }
+  if (comment && comment.trim().length > MAX_COMMENT_LEN) {
+    return NextResponse.json({ error: `Comment cannot exceed ${MAX_COMMENT_LEN} characters` }, { status: 400 });
+  }
 
   // Verify the entity exists
   const table = ENTITY_TABLE[entity];
@@ -50,29 +64,23 @@ export async function POST(req: NextRequest) {
           entityId,
         },
       },
-      update: { rating, title, comment },
+      update: {
+        rating,
+        title: title ? title.trim() : null,
+        comment: comment ? comment.trim() : null,
+      },
       create: {
         userId: user.id,
         entity,
         entityId,
         rating,
-        title,
-        comment,
+        title: title ? title.trim() : null,
+        comment: comment ? comment.trim() : null,
       },
     });
 
     // Recompute aggregate rating + reviewCount on the parent entity
-    const aggregates = await db.review.aggregate({
-      where: { entity, entityId },
-      _avg: { rating: true },
-      _count: { rating: true },
-    });
-    const avg = aggregates._avg.rating ?? 0;
-    const count = aggregates._count.rating ?? 0;
-    await (db as unknown as Record<string, { update: (args: { where: { id: string }; data: { rating: number; reviewCount: number } }) => Promise<unknown> }>)[table]?.update({
-      where: { id: entityId },
-      data: { rating: Math.round(avg * 10) / 10, reviewCount: count },
-    });
+    await updateEntityAggregates(entity, entityId, table);
 
     return NextResponse.json({ ok: true, review });
   } catch (err) {
@@ -102,4 +110,63 @@ export async function GET(req: NextRequest) {
     take: 100, // cap — paginated UI should request more if needed
   });
   return NextResponse.json({ reviews });
+}
+
+/**
+ * DELETE /api/reviews?id=...
+ * Enforces BOLA: only the review author or an ADMIN can delete a review.
+ */
+export async function DELETE(req: NextRequest) {
+  const user = await getSession();
+  if (!user) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "id parameter is required" }, { status: 400 });
+  }
+
+  const existing = await db.review.findUnique({
+    where: { id },
+    select: { id: true, userId: true, entity: true, entityId: true },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: "Review not found" }, { status: 404 });
+  }
+
+  // BOLA verification
+  if (existing.userId !== user.id && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    return NextResponse.json({ error: "Forbidden: You cannot delete another user's review" }, { status: 403 });
+  }
+
+  try {
+    await db.review.delete({ where: { id } });
+
+    // Recalculate parent entity metrics
+    const table = ENTITY_TABLE[existing.entity];
+    if (table) {
+      await updateEntityAggregates(existing.entity, existing.entityId, table);
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Delete review error:", err);
+    return NextResponse.json({ error: "Failed to delete review" }, { status: 500 });
+  }
+}
+
+async function updateEntityAggregates(entity: string, entityId: string, table: string) {
+  const aggregates = await db.review.aggregate({
+    where: { entity, entityId },
+    _avg: { rating: true },
+    _count: { rating: true },
+  });
+  const avg = aggregates._avg.rating ?? 0;
+  const count = aggregates._count.rating ?? 0;
+  await (db as unknown as Record<string, { update: (args: { where: { id: string }; data: { rating: number; reviewCount: number } }) => Promise<unknown> }>)[table]?.update({
+    where: { id: entityId },
+    data: { rating: Math.round(avg * 10) / 10, reviewCount: count },
+  });
 }

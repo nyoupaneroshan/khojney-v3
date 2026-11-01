@@ -245,6 +245,193 @@ export default async function DashboardPage() {
           }),
       );
     }
+    if (bookmarkByEntity.BANK?.length) {
+      tasks.push(
+        db.bank
+          .findMany({ where: { id: { in: bookmarkByEntity.BANK } } })
+          .then((rows) => {
+            for (const r of rows) {
+              const bm = bookmarks.find(
+                (b) => b.entity === "BANK" && b.entityId === r.id,
+              );
+              if (!bm) continue;
+              results.push({
+                id: bm.id,
+                entity: bm.entity,
+                entityId: bm.entityId,
+                createdAt: bm.createdAt,
+                data: {
+                  title: r.name,
+                  slug: r.slug,
+                  description: r.description,
+                  image: r.logo,
+                  meta: r.branchCount ? `${r.branchCount} branches` : undefined,
+                },
+              });
+            }
+          }),
+      );
+    }
+    if (bookmarkByEntity.JOB?.length) {
+      tasks.push(
+        db.job
+          .findMany({ where: { id: { in: bookmarkByEntity.JOB } } })
+          .then((rows) => {
+            for (const r of rows) {
+              const bm = bookmarks.find(
+                (b) => b.entity === "JOB" && b.entityId === r.id,
+              );
+              if (!bm) continue;
+              results.push({
+                id: bm.id,
+                entity: bm.entity,
+                entityId: bm.entityId,
+                createdAt: bm.createdAt,
+                data: {
+                  title: r.title,
+                  slug: r.slug,
+                  description: r.description,
+                  image: r.companyLogo,
+                  meta: [r.company, r.location].filter(Boolean).join(" · "),
+                },
+              });
+            }
+          }),
+      );
+    }
+    if (bookmarkByEntity.GOVERNMENT_SERVICE?.length) {
+      tasks.push(
+        db.governmentService
+          .findMany({ where: { id: { in: bookmarkByEntity.GOVERNMENT_SERVICE } } })
+          .then((rows) => {
+            for (const r of rows) {
+              const bm = bookmarks.find(
+                (b) => b.entity === "GOVERNMENT_SERVICE" && b.entityId === r.id,
+              );
+              if (!bm) continue;
+              results.push({
+                id: bm.id,
+                entity: bm.entity,
+                entityId: bm.entityId,
+                createdAt: bm.createdAt,
+                data: {
+                  title: r.title,
+                  slug: r.slug,
+                  description: r.description,
+                  meta: [r.ministry, r.department].filter(Boolean).join(" · "),
+                },
+              });
+            }
+          }),
+      );
+    }
+    if (bookmarkByEntity.HOSPITAL?.length) {
+      tasks.push(
+        db.hospital
+          .findMany({ where: { id: { in: bookmarkByEntity.HOSPITAL } } })
+          .then((rows) => {
+            for (const r of rows) {
+              const bm = bookmarks.find(
+                (b) => b.entity === "HOSPITAL" && b.entityId === r.id,
+              );
+              if (!bm) continue;
+              results.push({
+                id: bm.id,
+                entity: bm.entity,
+                entityId: bm.entityId,
+                createdAt: bm.createdAt,
+                data: {
+                  title: r.name,
+                  slug: r.slug,
+                  description: r.description,
+                  image: r.logo || r.coverImage,
+                  meta: [r.city, r.bedCount ? `${r.bedCount} beds` : null].filter(Boolean).join(" · "),
+                },
+              });
+            }
+          }),
+      );
+    }
+    if (bookmarkByEntity.MUTUAL_FUND?.length) {
+      tasks.push(
+        db.mutualFund
+          .findMany({ where: { id: { in: bookmarkByEntity.MUTUAL_FUND } } })
+          .then((rows) => {
+            for (const r of rows) {
+              const bm = bookmarks.find(
+                (b) => b.entity === "MUTUAL_FUND" && b.entityId === r.id,
+              );
+              if (!bm) continue;
+              results.push({
+                id: bm.id,
+                entity: bm.entity,
+                entityId: bm.entityId,
+                createdAt: bm.createdAt,
+                data: {
+                  title: r.name,
+                  slug: r.slug,
+                  description: r.description,
+                  meta: [r.fundManager, r.nav ? `NAV: NPR ${r.nav}` : null].filter(Boolean).join(" · "),
+                },
+              });
+            }
+          }),
+      );
+    }
+    const nepseIds = [...(bookmarkByEntity.NEPSE_STOCK || []), ...(bookmarkByEntity.NEPSE || [])];
+    if (nepseIds.length) {
+      tasks.push(
+        db.nepseStock
+          .findMany({ where: { id: { in: nepseIds } } })
+          .then((rows) => {
+            for (const r of rows) {
+              const bm = bookmarks.find(
+                (b) => (b.entity === "NEPSE_STOCK" || b.entity === "NEPSE") && b.entityId === r.id,
+              );
+              if (!bm) continue;
+              results.push({
+                id: bm.id,
+                entity: bm.entity,
+                entityId: bm.entityId,
+                createdAt: bm.createdAt,
+                data: {
+                  title: `${r.symbol} (${r.companyName})`,
+                  slug: r.slug,
+                  description: r.description,
+                  meta: r.ltp ? `LTP: NPR ${r.ltp} (${r.sector})` : r.sector,
+                },
+              });
+            }
+          }),
+      );
+    }
+    if (bookmarkByEntity.INSURANCE?.length) {
+      tasks.push(
+        db.insuranceCompany
+          .findMany({ where: { id: { in: bookmarkByEntity.INSURANCE } } })
+          .then((rows) => {
+            for (const r of rows) {
+              const bm = bookmarks.find(
+                (b) => b.entity === "INSURANCE" && b.entityId === r.id,
+              );
+              if (!bm) continue;
+              results.push({
+                id: bm.id,
+                entity: bm.entity,
+                entityId: bm.entityId,
+                createdAt: bm.createdAt,
+                data: {
+                  title: r.name,
+                  slug: r.slug,
+                  description: r.description,
+                  image: r.logo,
+                  meta: [r.type, r.claimSettlementRatio ? `CSR: ${r.claimSettlementRatio}%` : null].filter(Boolean).join(" · "),
+                },
+              });
+            }
+          }),
+      );
+    }
 
     await Promise.all(tasks);
     // Sort by createdAt desc
