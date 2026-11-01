@@ -148,7 +148,7 @@ export default async function JobsListPage({
     items: jobs.map((j) => ({
       name: j.title,
       url: `/jobs/${j.slug}`,
-      image: j.coverImage || null,
+      image: j.companyLogo || null,
     })),
   });
 

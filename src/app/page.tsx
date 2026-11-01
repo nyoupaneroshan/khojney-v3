@@ -32,7 +32,6 @@ import {
   getCachedFeaturedMutualFunds,
   getCachedFeaturedInsurance,
   getCachedHomepageStats,
-  getCachedCategories,
 } from "@/lib/cache";
 
 // Page-level ISR: revalidate the entire homepage every hour.

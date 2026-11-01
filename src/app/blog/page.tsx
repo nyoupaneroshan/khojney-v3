@@ -19,17 +19,20 @@ import { formatDate, formatNumber } from "@/components/khojney/format";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
 import { cn } from "@/lib/utils";
 import { getCachedCategories, getCachedBlogTags } from "@/lib/cache";
+import { buildMetadata, MODULE_KEYWORDS, buildBreadcrumbSchema, buildItemListSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/khojney/json-ld";
 
 export const revalidate = 3600;
 const BASE_PATH = "/blog";
 const PAGE_SIZE = 9;
 
-export const metadata: Metadata = {
-  title: "Blog — Guides, Exam Tips, Career Advice",
+export const metadata: Metadata = buildMetadata({
+  title: "Khojney Blog — Guides, Exam Tips, College & Career Advice in Nepal",
   description:
     "Read the Khojney blog for exam preparation guides, career tips, college admission advice, and education news in Nepal.",
-  alternates: { canonical: BASE_PATH },
-};
+  canonical: BASE_PATH,
+  keywords: [...MODULE_KEYWORDS.blog],
+});
 
 export default async function BlogListPage({
   searchParams,
@@ -102,8 +105,25 @@ export default async function BlogListPage({
   const totalPages = Math.max(1, Math.ceil(adjustedTotal / pageSize));
   const activeFilterCount = [q, categorySlug, tagSlug].filter(Boolean).length;
 
+  const breadcrumbLd = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Blog", url: BASE_PATH },
+  ]);
+
+  const itemListLd = buildItemListSchema({
+    name: "Khojney Blog",
+    description: "Guides, exam tips, career advice, and education news for Nepali students.",
+    items: posts.map((p) => ({
+      name: p.title,
+      url: `/blog/${p.slug}`,
+      image: p.coverImage || null,
+    })),
+  });
+
   return (
     <AppShell user={user}>
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={itemListLd} />
       <ListPageHeader
         title="Khojney Blog"
         description="Guides, exam tips, career advice, and education news for Nepali students."

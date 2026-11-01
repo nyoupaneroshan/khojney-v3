@@ -120,7 +120,7 @@ export default async function BanksListPage({
     items: banks.map((b) => ({
       name: b.name,
       url: `/banks/${b.slug}`,
-      image: b.logo || b.coverImage || null,
+      image: b.logo || null,
     })),
   });
 

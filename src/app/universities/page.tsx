@@ -20,7 +20,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { formatNumber } from "@/components/khojney/format";
 import { asInt, asString, type SearchParamsLike } from "@/components/khojney/filter-url";
-import { buildMetadata, MODULE_KEYWORDS } from "@/lib/seo";
+import { buildMetadata, MODULE_KEYWORDS, buildBreadcrumbSchema, buildItemListSchema } from "@/lib/seo";
+import { JsonLd } from "@/components/khojney/json-ld";
 import { CrossLinkFooter } from "@/components/khojney/cross-link-footer";
 
 export const revalidate = 3600;
@@ -95,8 +96,25 @@ export default async function UniversitiesListPage({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const activeFilterCount = [q, type, city].filter(Boolean).length;
 
+  const breadcrumbLd = buildBreadcrumbSchema([
+    { name: "Home", url: "/" },
+    { name: "Universities", url: BASE_PATH },
+  ]);
+
+  const itemListLd = buildItemListSchema({
+    name: "Universities in Nepal",
+    description: "Browse all accredited universities in Nepal. Compare programs, faculties, campuses, and student stats.",
+    items: universities.map((u) => ({
+      name: u.name,
+      url: `/universities/${u.slug}`,
+      image: u.logo || u.coverImage || null,
+    })),
+  });
+
   return (
     <AppShell user={user}>
+      <JsonLd data={breadcrumbLd} />
+      <JsonLd data={itemListLd} />
       <ListPageHeader
         title="Universities in Nepal"
         description="Browse all accredited universities in Nepal. Compare programs, faculties, campuses, and student stats."
