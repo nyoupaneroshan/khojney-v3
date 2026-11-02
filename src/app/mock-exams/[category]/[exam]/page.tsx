@@ -477,35 +477,44 @@ export default async function ExamLandingPage({ params }: PageProps) {
               Choose a set to start practicing. Each set has unique questions.
             </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {childSets.map((set) => (
-                <Card key={set.id} className="card-hover flex flex-col">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">{set.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col">
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
-                      {set.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-4">
-                      <span className="flex items-center gap-1">
-                        <FileQuestion className="h-3 w-3" />{set._count.questions} Q
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />{set.durationMin} min
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Trophy className="h-3 w-3" />{set.totalMarks} marks
-                      </span>
-                    </div>
-                    <Button asChild size="sm" className="w-full">
-                      <Link href={`/exams/${set.slug}/take`}>
-                        Start Set
-                        <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+              {childSets.map((set) => {
+                const isSubParent = Boolean(set.children && set.children.length > 0);
+                const qCount = isSubParent
+                  ? set.children.reduce((acc, gc) => acc + gc._count.questions, 0)
+                  : set._count.questions;
+                const href = isSubParent ? `/exams/${set.slug}` : `/exams/${set.slug}/take`;
+
+                return (
+                  <Card key={set.id} className="card-hover flex flex-col">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">{set.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1 flex flex-col">
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
+                        {set.description}
+                      </p>
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-4">
+                        <span className="flex items-center gap-1">
+                          <FileQuestion className="h-3 w-3" />
+                          {isSubParent ? `${set.children.length} Sets` : `${qCount} Q`}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />{set.durationMin} min
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Trophy className="h-3 w-3" />{set.totalMarks || 100} marks
+                        </span>
+                      </div>
+                      <Button asChild size="sm" className="w-full">
+                        <Link href={href}>
+                          {isSubParent ? "Browse Sets" : "Start Set"}
+                          <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>

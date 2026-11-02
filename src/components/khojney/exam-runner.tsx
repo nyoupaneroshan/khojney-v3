@@ -17,6 +17,11 @@ import {
   ListChecks,
   AlertTriangle,
   Loader2,
+  Bookmark,
+  Sparkles,
+  User,
+  ArrowRight,
+  Keyboard,
 } from "lucide-react";
 import {
   Card,
@@ -46,17 +51,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 export interface ExamRunnerQuestion {
   id: string;
   question: string;
   options: string[];
-  // `correctIdx` and `explanation` are intentionally NOT shipped to the client
-  // before submission — they are only returned in the submit-response so users
-  // cannot cheat by inspecting the page source. Both fields are kept optional
-  // here so the client type can also represent the post-submit shape (where
-  // these fields ARE populated).
   correctIdx?: number;
   explanation?: string | null;
   marks: number;
@@ -96,11 +103,12 @@ interface SubmitResult {
   rank: number;
   passingMarks: number | null;
   perQuestion: PerQuestionResult[];
+  isGuest?: boolean;
 }
 
 interface ExamRunnerProps {
   exam: ExamRunnerExam;
-  userId: string;
+  userId?: string;
 }
 
 type Phase = "loading" | "active" | "submitting" | "result";
@@ -112,7 +120,6 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
 }
 
-// Fisher-Yates shuffle (returns a new array, doesn't mutate input)
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -122,13 +129,9 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// Process questions: optionally shuffle order + shuffle options within each question.
-// Returns questions with a `displayOptions` array and a `displayToOriginal` mapping
-// so that when the user picks displayIdx, we can store the ORIGINAL option index
-// (which the server uses to check against correctIdx).
 interface ProcessedQuestion extends ExamRunnerQuestion {
   displayOptions: string[];
-  displayToOriginal: number[]; // displayToOriginal[displayIdx] = originalIdx
+  displayToOriginal: number[];
 }
 
 function processQuestions(
@@ -142,9 +145,10 @@ function processQuestions(
   }
   return qs.map((q) => {
     const originalIndices = q.options.map((_, i) => i);
-    const shuffledIndices = shuffleOpts && originalIndices.length > 1
-      ? shuffle(originalIndices)
-      : originalIndices;
+    const shuffledIndices =
+      shuffleOpts && originalIndices.length > 1
+        ? shuffle(originalIndices)
+        : originalIndices;
     const displayOptions = shuffledIndices.map((i) => q.options[i]);
     return {
       ...q,
@@ -156,43 +160,43 @@ function processQuestions(
 
 export function ExamRunner({ exam, userId }: ExamRunnerProps) {
   const router = useRouter();
+  const isGuest = !userId || userId === "guest";
+
   const [phase, setPhase] = useState<Phase>("loading");
-  const [attemptId, setAttemptId] = useState<string | null>(null);
+  const [attemptId, setAttemptId] = useState<string | null>(isGuest ? "guest" : null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number | null>>({});
+  const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(Math.max(1, exam.durationMin) * 60);
   const [result, setResult] = useState<SubmitResult | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
+  const [navFilter, setNavFilter] = useState<"all" | "answered" | "flagged" | "unanswered">("all");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const submittedRef = useRef(false);
 
-  // Shuffle questions + options ONCE per mount (per attempt).
-  // This runs before the component renders, so every attempt sees a different order.
+  // Shuffle questions once per mount
   const processedQuestions = useMemo(
-    () =>
-      processQuestions(
-        exam.questions,
-        exam.shuffleQuestions,
-        exam.shuffleOptions,
-      ),
-    [], // intentionally empty — shuffle only once per mount
+    () => processQuestions(exam.questions, exam.shuffleQuestions, exam.shuffleOptions),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   const totalQuestions = processedQuestions.length;
 
-  // Tag user id for any client-side analytics / debugging
-  useEffect(() => {
-    if (userId && typeof window !== "undefined") {
-      (window as Window & { __khojneyUserId?: string }).__khojneyUserId = userId;
-    }
-  }, [userId]);
-
-  // Start attempt on mount
+  // Start attempt on mount (Instant for guest, API for logged-in)
   useEffect(() => {
     if (exam.questions.length === 0) {
       setPhase("active");
       return;
     }
+
+    if (isGuest) {
+      setPhase("active");
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
@@ -215,10 +219,11 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
         toast.error(err instanceof Error ? err.message : "Failed to start exam");
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [exam.id, exam.questions.length]);
+  }, [exam.id, exam.questions.length, isGuest]);
 
   // Countdown timer
   useEffect(() => {
@@ -226,7 +231,6 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          // Auto-submit
           if (!submittedRef.current) {
             submittedRef.current = true;
             void submitExam(true);
@@ -239,30 +243,44 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   const submitExam = useCallback(
     async (auto = false) => {
-      if (!attemptId) return;
       if (submittedRef.current) return;
       submittedRef.current = true;
       if (timerRef.current) clearInterval(timerRef.current);
 
       setPhase("submitting");
+      const durationSec = Math.max(1, Math.round(exam.durationMin * 60 - timeLeft));
+
       try {
+        const payload = isGuest
+          ? {
+              action: "guest-submit",
+              examId: exam.id,
+              answers,
+              durationSec,
+            }
+          : {
+              action: "submit",
+              attemptId,
+              answers,
+              durationSec,
+            };
+
         const res = await fetch("/api/exam-attempts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "submit",
-            attemptId,
-            answers,
-          }),
+          body: JSON.stringify(payload),
         });
+
         if (!res.ok) {
           const data = await res.json().catch(() => ({}) as { error?: string });
           throw new Error(data.error ?? "Failed to submit exam");
         }
+
         const data = (await res.json()) as SubmitResult;
         setResult(data);
         setPhase("result");
@@ -277,11 +295,9 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
         toast.error(err instanceof Error ? err.message : "Failed to submit exam");
       }
     },
-    [attemptId, answers],
+    [attemptId, answers, exam.id, exam.durationMin, isGuest, timeLeft],
   );
 
-  // When user selects a DISPLAYED option index, convert to ORIGINAL index
-  // so the server can check against the original correctIdx.
   const selectOption = (questionId: string, displayIdx: number) => {
     const q = processedQuestions.find((pq) => pq.id === questionId);
     if (!q) return;
@@ -297,22 +313,74 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
     });
   };
 
+  const toggleFlag = (questionId: string) => {
+    setFlagged((prev) => {
+      const next = new Set(prev);
+      if (next.has(questionId)) next.delete(questionId);
+      else next.add(questionId);
+      return next;
+    });
+  };
+
   const currentQuestion = processedQuestions[currentIdx];
-  const answeredCount = useMemo(
-    () => Object.keys(answers).length,
-    [answers],
-  );
+  const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
   const progressPct = totalQuestions ? (answeredCount / totalQuestions) * 100 : 0;
+
+  // Keyboard shortcut listeners
+  useEffect(() => {
+    if (phase !== "active") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+
+      const key = e.key.toLowerCase();
+
+      // Number keys 1-4
+      if (currentQuestion && ["1", "2", "3", "4"].includes(key)) {
+        const idx = parseInt(key, 10) - 1;
+        if (idx < currentQuestion.displayOptions.length) {
+          selectOption(currentQuestion.id, idx);
+        }
+      }
+
+      // Letter keys a-d
+      if (currentQuestion && ["a", "b", "c", "d"].includes(key)) {
+        const idx = key.charCodeAt(0) - 97;
+        if (idx < currentQuestion.displayOptions.length) {
+          selectOption(currentQuestion.id, idx);
+        }
+      }
+
+      // Navigation
+      if (key === "arrowright" || key === "j") {
+        setCurrentIdx((i) => Math.min(totalQuestions - 1, i + 1));
+      }
+      if (key === "arrowleft" || key === "k") {
+        setCurrentIdx((i) => Math.max(0, i - 1));
+      }
+
+      // Flag
+      if (key === "f" || key === "m") {
+        if (currentQuestion) toggleFlag(currentQuestion.id);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [phase, currentQuestion, totalQuestions]);
 
   // -------- Loading state --------
   if (phase === "loading") {
     return (
       <div className="container-app py-16">
-        <Card className="max-w-md mx-auto text-center">
-          <CardContent className="pt-6 flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="font-medium">Starting your exam...</p>
-            <p className="text-sm text-muted-foreground">Preparing questions and timer</p>
+        <Card className="max-w-md mx-auto text-center border-border/80 shadow-md">
+          <CardContent className="pt-8 pb-8 flex flex-col items-center gap-3">
+            <Loader2 className="h-9 w-9 animate-spin text-primary" />
+            <h3 className="font-bold text-lg text-foreground">Preparing Your Exam</h3>
+            <p className="text-xs text-muted-foreground">
+              Randomizing question order, configuring timer, and preparing instant scorecards...
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -323,12 +391,12 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
   if (startError) {
     return (
       <div className="container-app py-16">
-        <Card className="max-w-md mx-auto text-center">
+        <Card className="max-w-md mx-auto text-center border-destructive/20 shadow-md">
           <CardHeader>
             <div className="mx-auto h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
               <AlertTriangle className="h-6 w-6 text-destructive" />
             </div>
-            <CardTitle>Could not start exam</CardTitle>
+            <CardTitle>Could Not Start Exam</CardTitle>
             <CardDescription>{startError}</CardDescription>
           </CardHeader>
           <CardFooter className="flex justify-center gap-2">
@@ -346,11 +414,13 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
   if (phase === "submitting") {
     return (
       <div className="container-app py-16">
-        <Card className="max-w-md mx-auto text-center">
-          <CardContent className="pt-6 flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="font-medium">Submitting your exam...</p>
-            <p className="text-sm text-muted-foreground">Calculating your score</p>
+        <Card className="max-w-md mx-auto text-center border-border/80 shadow-md">
+          <CardContent className="pt-8 pb-8 flex flex-col items-center gap-3">
+            <Loader2 className="h-9 w-9 animate-spin text-primary" />
+            <h3 className="font-bold text-lg text-foreground">Grading Your Exam</h3>
+            <p className="text-xs text-muted-foreground">
+              Checking syllabus answers, calculating accuracy, and generating detailed explanations...
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -363,17 +433,20 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
       <ResultView
         exam={exam}
         result={result}
+        isGuest={isGuest}
         onRetake={() => {
           submittedRef.current = false;
-          setAttemptId(null);
           setAnswers({});
+          setFlagged(new Set());
           setCurrentIdx(0);
           setTimeLeft(exam.durationMin * 60);
           setResult(null);
-          setPhase("loading");
-          // Re-trigger the start effect
-          setTimeout(() => {
-            (async () => {
+
+          if (isGuest) {
+            setPhase("active");
+          } else {
+            setPhase("loading");
+            setTimeout(async () => {
               try {
                 const res = await fetch("/api/exam-attempts", {
                   method: "POST",
@@ -387,8 +460,8 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
               } catch (err) {
                 toast.error(err instanceof Error ? err.message : "Failed to start exam");
               }
-            })();
-          }, 50);
+            }, 50);
+          }
         }}
         onExit={() => router.push(`/exams/${exam.slug}`)}
       />
@@ -399,12 +472,12 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
   if (totalQuestions === 0) {
     return (
       <div className="container-app py-16">
-        <Card className="max-w-md mx-auto text-center">
+        <Card className="max-w-md mx-auto text-center border-border/80">
           <CardHeader>
             <div className="mx-auto h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-2">
               <ListChecks className="h-6 w-6 text-muted-foreground" />
             </div>
-            <CardTitle>No questions available</CardTitle>
+            <CardTitle>No Questions Available</CardTitle>
             <CardDescription>
               This mock test does not have any questions available to take at this time.
             </CardDescription>
@@ -414,7 +487,7 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
               <Link href={`/exams/${exam.slug}`}>View Overview</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/exams">All Mock Tests</Link>
+              <Link href="/exams">Browse All Exams</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -424,161 +497,240 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
 
   // -------- Active exam state --------
   const lowTime = timeLeft <= 60;
+  const criticalTime = timeLeft <= 30;
   const selectedOption = currentQuestion ? answers[currentQuestion.id] ?? null : null;
-  // Convert the stored original index back to display index for highlighting
-  const selectedDisplayIdx = selectedOption !== null && currentQuestion
-    ? currentQuestion.displayToOriginal.indexOf(selectedOption)
-    : null;
+  const selectedDisplayIdx =
+    selectedOption !== null && currentQuestion
+      ? currentQuestion.displayToOriginal.indexOf(selectedOption)
+      : null;
+  const isCurrentFlagged = currentQuestion ? flagged.has(currentQuestion.id) : false;
+
+  // Question filtering in navigator
+  const filteredIndices = processedQuestions
+    .map((q, idx) => ({ q, idx }))
+    .filter(({ q, idx }) => {
+      if (navFilter === "answered") return answers[q.id] !== undefined;
+      if (navFilter === "flagged") return flagged.has(q.id);
+      if (navFilter === "unanswered") return answers[q.id] === undefined;
+      return true;
+    });
 
   return (
-    <div className="bg-muted/30 min-h-[calc(100vh-4rem)]">
-      {/* Top bar */}
-      <div className="sticky top-0 z-30 border-b bg-white">
-        <div className="container-app flex items-center justify-between h-14 gap-4">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold truncate">{exam.title}</p>
-            <p className="text-xs text-muted-foreground">
-              Question {currentIdx + 1} of {totalQuestions}
-            </p>
+    <div className="bg-muted/20 min-h-[calc(100vh-4rem)] pb-24 lg:pb-12">
+      {/* Top sticky test control bar */}
+      <div className="sticky top-0 z-30 border-b border-border/80 bg-background/95 backdrop-blur-md shadow-xs">
+        <div className="container-app flex items-center justify-between h-14 gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-bold truncate text-foreground">{exam.title}</h2>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>
+                Question <strong>{currentIdx + 1}</strong> of {totalQuestions}
+              </span>
+              <span>•</span>
+              <span className="text-primary font-semibold">
+                {answeredCount} Answered
+              </span>
+              {flagged.size > 0 && (
+                <>
+                  <span>•</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                    <Bookmark className="h-3 w-3 fill-current" /> {flagged.size} Flagged
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2.5">
+            {/* Timer */}
             <div
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-mono font-semibold",
-                lowTime
-                  ? "bg-destructive/10 text-destructive animate-pulse"
-                  : "bg-primary/10 text-primary",
+                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-mono font-bold tracking-tight border transition-colors shadow-2xs",
+                criticalTime
+                  ? "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400 animate-pulse"
+                  : lowTime
+                    ? "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                    : "bg-primary/10 border-primary/20 text-primary",
               )}
               aria-label={`Time remaining: ${formatTime(timeLeft)}`}
             >
-              <Clock className="h-4 w-4" />
-              {formatTime(timeLeft)}
+              <Clock className="h-3.5 w-3.5" />
+              <span>{formatTime(timeLeft)}</span>
             </div>
+
+            {/* Submit Confirmation Dialog */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="default" size="sm">
-                  <Flag className="h-3.5 w-3.5" /> Submit
+                <Button variant="default" size="sm" className="font-semibold shadow-xs text-xs sm:text-sm">
+                  <Flag className="h-3.5 w-3.5 fill-current mr-1" /> Finish
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Submit your exam?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {answeredCount < totalQuestions
-                      ? `You have answered ${answeredCount} of ${totalQuestions} questions. Unanswered questions will be marked as wrong.`
-                      : "You have answered all questions. Are you ready to see your results?"}
-                    {" This action cannot be undone."}
+                  <AlertDialogTitle>Submit Your Mock Exam?</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2 pt-1 text-sm">
+                    <p>
+                      You have answered <strong>{answeredCount}</strong> of <strong>{totalQuestions}</strong> questions.
+                    </p>
+                    {totalQuestions - answeredCount > 0 && (
+                      <p className="text-amber-600 dark:text-amber-400 font-medium">
+                        ⚠️ {totalQuestions - answeredCount} questions are still unanswered.
+                      </p>
+                    )}
+                    {flagged.size > 0 && (
+                      <p className="text-muted-foreground">
+                        ℹ️ You still have {flagged.size} questions flagged for review.
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground pt-1">
+                      Once submitted, your responses will be evaluated instantly and complete answer explanations will be displayed.
+                    </p>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Keep practicing</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => submitExam(false)}>
-                    Submit now
+                  <AlertDialogCancel>Keep Practicing</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => submitExam(false)}
+                    className="bg-primary text-primary-foreground font-semibold"
+                  >
+                    Yes, Submit Now
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </div>
         </div>
-        <div className="container-app pb-2">
-          <Progress value={progressPct} className="h-1" />
-        </div>
+
+        {/* Progress bar */}
+        <Progress value={progressPct} className="h-1 rounded-none bg-muted" />
       </div>
 
-      <div className="container-app py-6 grid lg:grid-cols-[1fr_280px] gap-6">
+      <div className="container-app py-6 grid lg:grid-cols-[1fr_300px] gap-6">
         {/* Main question card */}
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <Badge variant="secondary" className="text-xs">
-                  Q{currentIdx + 1} · {currentQuestion.marks} mark
-                  {currentQuestion.marks !== 1 ? "s" : ""}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {answeredCount} / {totalQuestions} answered
-                </span>
+          <Card className="border-border/80 shadow-xs">
+            <CardHeader className="pb-4 border-b border-border/40">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="font-semibold text-xs">
+                    Question {currentIdx + 1}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {currentQuestion.marks} Mark{currentQuestion.marks !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={isCurrentFlagged ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => toggleFlag(currentQuestion.id)}
+                    className={cn(
+                      "h-7 px-2 text-xs gap-1 font-medium",
+                      isCurrentFlagged && "text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30",
+                    )}
+                    title="Press 'F' to toggle flag"
+                  >
+                    <Bookmark className={cn("h-3.5 w-3.5", isCurrentFlagged && "fill-current")} />
+                    {isCurrentFlagged ? "Flagged" : "Flag (F)"}
+                  </Button>
+                </div>
               </div>
-              <CardTitle className="text-lg leading-relaxed pt-2">
+              <CardTitle className="text-base sm:text-lg font-bold leading-relaxed pt-2 text-foreground">
                 {currentQuestion.question}
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
+
+            <CardContent className="pt-5 pb-5">
+              <div className="space-y-2.5">
                 {currentQuestion.displayOptions.map((opt, idx) => {
                   const isSelected = selectedDisplayIdx === idx;
+                  const keyLetter = String.fromCharCode(65 + idx);
                   return (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => selectOption(currentQuestion.id, idx)}
                       className={cn(
-                        "w-full text-left rounded-lg border p-3.5 text-sm transition-all flex items-start gap-3",
+                        "w-full text-left rounded-xl border p-3.5 text-sm transition-all flex items-start gap-3.5 group cursor-pointer focus:outline-hidden",
                         isSelected
-                          ? "border-primary bg-primary/5 ring-1 ring-primary"
-                          : "border-border hover:border-primary/40 hover:bg-accent/40",
+                          ? "border-primary bg-primary/10 ring-2 ring-primary/40 font-medium text-foreground shadow-xs"
+                          : "border-border/80 bg-card hover:border-primary/50 hover:bg-muted/40 text-foreground/90",
                       )}
                     >
                       <span
                         className={cn(
-                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium",
+                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs font-bold transition-colors",
                           isSelected
                             ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border text-muted-foreground",
+                            : "border-border/80 bg-muted/60 text-muted-foreground group-hover:border-primary/40 group-hover:text-foreground",
                         )}
                       >
-                        {String.fromCharCode(65 + idx)}
+                        {keyLetter}
                       </span>
-                      <span className="flex-1 pt-0.5">{opt}</span>
+                      <span className="flex-1 pt-1 leading-snug">{opt}</span>
                     </button>
                   );
                 })}
               </div>
 
               {selectedDisplayIdx !== null && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => clearAnswer(currentQuestion.id)}
-                  className="mt-3 text-xs"
-                >
-                  Clear selection
-                </Button>
+                <div className="mt-4 pt-3 border-t border-border/50 flex justify-between items-center text-xs">
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium inline-flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Option saved
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => clearAnswer(currentQuestion.id)}
+                    className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Clear selection
+                  </Button>
+                </div>
               )}
             </CardContent>
-            <CardFooter className="border-t pt-4 flex items-center justify-between">
+
+            <CardFooter className="border-t border-border/60 pt-4 pb-4 flex items-center justify-between bg-muted/10 rounded-b-xl">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
                 disabled={currentIdx === 0}
+                className="font-medium gap-1 text-xs sm:text-sm"
               >
                 <ChevronLeft className="h-4 w-4" /> Previous
               </Button>
+
+              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Keyboard className="h-3 w-3" /> Keys: 1-4 or A-D to select • ← → to move
+              </div>
+
               {currentIdx < totalQuestions - 1 ? (
-                <Button onClick={() => setCurrentIdx((i) => Math.min(totalQuestions - 1, i + 1))}>
+                <Button
+                  size="sm"
+                  onClick={() => setCurrentIdx((i) => Math.min(totalQuestions - 1, i + 1))}
+                  className="font-semibold gap-1 text-xs sm:text-sm"
+                >
                   Next <ChevronRight className="h-4 w-4" />
                 </Button>
               ) : (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button>
-                      <Flag className="h-3.5 w-3.5" /> Finish &amp; Submit
+                    <Button size="sm" className="font-semibold gap-1 text-xs sm:text-sm">
+                      <Flag className="h-3.5 w-3.5 fill-current" /> Submit Exam
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Submit your exam?</AlertDialogTitle>
+                      <AlertDialogTitle>Submit Your Mock Exam?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {answeredCount < totalQuestions
-                          ? `You have answered ${answeredCount} of ${totalQuestions} questions.`
-                          : "You have answered all questions."}
-                        {" This action cannot be undone."}
+                        You have reached the final question. Are you ready to see your score and explanations?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Keep practicing</AlertDialogCancel>
+                      <AlertDialogCancel>Review Questions</AlertDialogCancel>
                       <AlertDialogAction onClick={() => submitExam(false)}>
-                        Submit now
+                        Submit Now
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -589,73 +741,187 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
         </div>
 
         {/* Sidebar: question navigator */}
-        <aside className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <ListChecks className="h-4 w-4" /> Question Navigator
-              </CardTitle>
+        <aside className="hidden lg:block space-y-4">
+          <Card className="border-border/80 shadow-xs">
+            <CardHeader className="pb-3 border-b border-border/50">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold flex items-center gap-1.5">
+                  <ListChecks className="h-4 w-4 text-primary" /> Question Grid
+                </CardTitle>
+                <span className="text-xs text-muted-foreground font-medium">
+                  {answeredCount}/{totalQuestions}
+                </span>
+              </div>
+
+              {/* Filter tabs */}
+              <div className="flex gap-1 pt-2">
+                {(["all", "flagged", "unanswered"] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setNavFilter(filter)}
+                    className={cn(
+                      "flex-1 text-[11px] font-medium py-1 px-1.5 rounded-md text-center transition-colors capitalize",
+                      navFilter === filter
+                        ? "bg-primary text-primary-foreground font-semibold"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    )}
+                  >
+                    {filter === "all" ? `All (${totalQuestions})` : filter === "flagged" ? `Flagged (${flagged.size})` : `Remaining (${totalQuestions - answeredCount})`}
+                  </button>
+                ))}
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-6 gap-2">
-                {processedQuestions.map((q, idx) => {
+
+            <CardContent className="pt-4">
+              <div className="grid grid-cols-5 gap-2">
+                {filteredIndices.map(({ q, idx }) => {
                   const answered = answers[q.id] !== undefined;
                   const isCurrent = idx === currentIdx;
+                  const isQFlagged = flagged.has(q.id);
+
                   return (
                     <button
                       key={q.id}
                       type="button"
                       onClick={() => setCurrentIdx(idx)}
                       className={cn(
-                        "h-9 w-9 rounded-md text-xs font-semibold border transition-all",
+                        "relative h-9 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center justify-center",
                         isCurrent
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : answered
-                            ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                            : "border-border bg-white text-muted-foreground hover:bg-accent",
+                          ? "border-primary bg-primary text-primary-foreground shadow-xs ring-2 ring-primary/30"
+                          : isQFlagged
+                            ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300 font-extrabold"
+                            : answered
+                              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                              : "border-border/80 bg-card text-muted-foreground hover:bg-accent/60",
                       )}
-                      aria-label={`Go to question ${idx + 1}${answered ? " (answered)" : ""}`}
+                      aria-label={`Question ${idx + 1}`}
                     >
                       {idx + 1}
+                      {isQFlagged && (
+                        <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-background" />
+                      )}
                     </button>
                   );
                 })}
               </div>
 
-              <div className="mt-4 space-y-1.5 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-sm border border-emerald-300 bg-emerald-50" />
-                  <span className="text-muted-foreground">Answered ({answeredCount})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-sm border border-border bg-white" />
-                  <span className="text-muted-foreground">
-                    Unanswered ({totalQuestions - answeredCount})
+              {/* Status legend */}
+              <div className="mt-5 space-y-1.5 text-[11px] pt-4 border-t border-border/50 text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500/60" /> Answered
                   </span>
+                  <span className="font-semibold text-foreground">{answeredCount}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-sm border border-primary bg-primary" />
-                  <span className="text-muted-foreground">Current</span>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-amber-500/70" /> Flagged for Review
+                  </span>
+                  <span className="font-semibold text-foreground">{flagged.size}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-sm border border-border bg-card" /> Unanswered
+                  </span>
+                  <span className="font-semibold text-foreground">{totalQuestions - answeredCount}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardContent className="pt-6 flex flex-col items-center text-center">
-              <Clock
-                className={cn(
-                  "h-6 w-6 mb-1",
-                  lowTime ? "text-destructive" : "text-primary",
-                )}
-              />
-              <p className="text-2xl font-mono font-bold">
-                {formatTime(timeLeft)}
-              </p>
-              <p className="text-xs text-muted-foreground">time remaining</p>
-            </CardContent>
-          </Card>
         </aside>
+      </div>
+
+      {/* Mobile Floating Bottom Bar for Smooth Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-t border-border/80 px-4 py-3 flex items-center justify-between shadow-lg">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
+          disabled={currentIdx === 0}
+          className="h-9 px-3"
+        >
+          <ChevronLeft className="h-4 w-4 mr-0.5" /> Prev
+        </Button>
+
+        {/* Mobile Quick Question Selector Dialog */}
+        <Dialog open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <DialogTrigger asChild>
+            <Button variant="secondary" size="sm" className="h-9 px-3 text-xs font-semibold gap-1">
+              <ListChecks className="h-3.5 w-3.5" />
+              Q {currentIdx + 1} / {totalQuestions}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold">Jump to Question</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-5 gap-2 pt-2">
+              {processedQuestions.map((q, idx) => {
+                const answered = answers[q.id] !== undefined;
+                const isCurrent = idx === currentIdx;
+                const isQFlagged = flagged.has(q.id);
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => {
+                      setCurrentIdx(idx);
+                      setMobileNavOpen(false);
+                    }}
+                    className={cn(
+                      "h-10 rounded-lg text-xs font-bold border transition-all flex items-center justify-center relative",
+                      isCurrent
+                        ? "border-primary bg-primary text-primary-foreground font-black"
+                        : isQFlagged
+                          ? "border-amber-500 bg-amber-500/15 text-amber-700"
+                          : answered
+                            ? "border-emerald-500 bg-emerald-500/15 text-emerald-700"
+                            : "border-border bg-card text-muted-foreground",
+                    )}
+                  >
+                    {idx + 1}
+                    {isQFlagged && (
+                      <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-background" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {currentIdx < totalQuestions - 1 ? (
+          <Button
+            size="sm"
+            onClick={() => setCurrentIdx((i) => Math.min(totalQuestions - 1, i + 1))}
+            className="h-9 px-3"
+          >
+            Next <ChevronRight className="h-4 w-4 ml-0.5" />
+          </Button>
+        ) : (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" className="h-9 px-3 font-semibold">
+                Finish <Flag className="h-3.5 w-3.5 ml-1 fill-current" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Ready to Submit?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You have answered {answeredCount} of {totalQuestions} questions. Unanswered questions will receive 0 marks.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Review</AlertDialogCancel>
+                <AlertDialogAction onClick={() => submitExam(false)}>
+                  Submit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     </div>
   );
@@ -668,14 +934,18 @@ export function ExamRunner({ exam, userId }: ExamRunnerProps) {
 function ResultView({
   exam,
   result,
+  isGuest,
   onRetake,
   onExit,
 }: {
   exam: ExamRunnerExam;
   result: SubmitResult;
+  isGuest: boolean;
   onRetake: () => void;
   onExit: () => void;
 }) {
+  const [reviewFilter, setReviewFilter] = useState<"all" | "incorrect" | "correct" | "skipped">("all");
+
   const pct = result.totalMarks
     ? Math.round((result.score / result.totalMarks) * 100)
     : 0;
@@ -683,66 +953,73 @@ function ResultView({
     ? result.score >= result.passingMarks
     : pct >= 40;
 
-  // Questions for review (original order, no shuffle)
+  // Questions for review
   const reviewQuestions = useMemo(
     () => [...exam.questions].sort((a, b) => a.order - b.order),
     [exam.questions],
   );
 
-  // Build a lookup of perQuestion by questionId
   const resultMap = useMemo(() => {
     const m = new Map<string, PerQuestionResult>();
     for (const r of result.perQuestion) m.set(r.questionId, r);
     return m;
   }, [result]);
 
+  const filteredReviewQuestions = reviewQuestions.filter((q) => {
+    const r = resultMap.get(q.id);
+    if (!r) return true;
+    if (reviewFilter === "incorrect") return r.selectedIdx !== null && !r.isCorrect;
+    if (reviewFilter === "correct") return r.isCorrect;
+    if (reviewFilter === "skipped") return r.selectedIdx === null;
+    return true;
+  });
+
   return (
-    <div className="bg-muted/30 min-h-[calc(100vh-4rem)]">
+    <div className="bg-muted/20 min-h-[calc(100vh-4rem)] pb-16">
       <div className="container-app py-8 md:py-12">
-        {/* Score card */}
-        <Card className="max-w-3xl mx-auto overflow-hidden">
+        {/* Scorecard Hero */}
+        <Card className="max-w-3xl mx-auto overflow-hidden border-border/80 shadow-md">
           <div
             className={cn(
-              "bg-gradient-to-br p-8 text-center text-white",
+              "bg-gradient-to-br p-8 text-center text-white relative overflow-hidden",
               passed
-                ? "from-emerald-500 to-emerald-700"
-                : "from-red-500 to-red-700",
+                ? "from-emerald-600 via-emerald-700 to-teal-800"
+                : "from-rose-600 via-rose-700 to-amber-800",
             )}
           >
-            <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-white/20 mb-3">
-              {passed ? (
-                <Trophy className="h-8 w-8" />
-              ) : (
-                <AlertTriangle className="h-8 w-8" />
-              )}
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-white/20 mb-3 shadow-inner">
+              {passed ? <Trophy className="h-8 w-8" /> : <AlertTriangle className="h-8 w-8" />}
             </div>
-            <p className="text-sm uppercase tracking-wide opacity-90">
-              {passed ? "Congratulations!" : "Keep practicing!"}
+            <p className="text-xs font-bold uppercase tracking-widest opacity-90">
+              {passed ? "Congratulations • Test Passed!" : "Needs Improvement • Keep Practicing"}
             </p>
-            <p className="text-6xl font-bold mt-1">
+            <div className="text-6xl font-black mt-1 tracking-tight">
               {result.score}
-              <span className="text-2xl opacity-80">/{result.totalMarks}</span>
+              <span className="text-2xl font-semibold opacity-80"> / {result.totalMarks}</span>
+            </div>
+            <p className="text-sm mt-1 font-medium opacity-90">
+              Score: {pct}% • {passed ? "PASSED" : "FAILED"}
+              {result.passingMarks ? ` (Passing: ${result.passingMarks} marks)` : ""}
             </p>
-            <p className="text-lg mt-1 opacity-90">{pct}% · {passed ? "PASSED" : "NOT PASSED"}</p>
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm">
-              <Trophy className="h-4 w-4" /> Rank #{result.rank}
+            <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-semibold">
+              <Trophy className="h-3.5 w-3.5" /> Leaderboard Rank #{result.rank}
             </div>
           </div>
 
-          <CardContent className="pt-6">
-            {/* Breakdown */}
+          <CardContent className="pt-6 pb-6">
+            {/* Metric Breakdown */}
             <div className="grid grid-cols-3 gap-3 text-center mb-6">
               <Breakdown
-                icon={<CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                icon={<CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}
                 label="Correct"
                 value={result.correctCount}
-                color="text-emerald-600"
+                color="text-emerald-600 dark:text-emerald-400"
               />
               <Breakdown
-                icon={<XCircle className="h-4 w-4 text-destructive" />}
+                icon={<XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />}
                 label="Wrong"
                 value={result.wrongCount}
-                color="text-destructive"
+                color="text-rose-600 dark:text-rose-400"
               />
               <Breakdown
                 icon={<Circle className="h-4 w-4 text-muted-foreground" />}
@@ -752,141 +1029,207 @@ function ResultView({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Time taken</p>
-                <p className="font-semibold">
+            <div className="grid grid-cols-2 gap-3 text-xs sm:text-sm">
+              <div className="rounded-xl border border-border/80 bg-muted/20 p-3">
+                <p className="text-muted-foreground text-[11px]">Time Spent</p>
+                <p className="font-bold text-foreground mt-0.5">
                   {Math.floor(result.durationSec / 60)}m {result.durationSec % 60}s
                   <span className="text-muted-foreground text-xs font-normal">
                     {" "}/ {exam.durationMin}m
                   </span>
                 </p>
               </div>
-              <div className="rounded-lg border p-3">
-                <p className="text-muted-foreground text-xs">Passing marks</p>
-                <p className="font-semibold">
-                  {result.passingMarks ?? "—"}
-                  <span className="text-muted-foreground text-xs font-normal">
-                    {" "}/ {result.totalMarks}
-                  </span>
+              <div className="rounded-xl border border-border/80 bg-muted/20 p-3">
+                <p className="text-muted-foreground text-[11px]">Accuracy Rate</p>
+                <p className="font-bold text-foreground mt-0.5">
+                  {result.correctCount + result.wrongCount > 0
+                    ? Math.round((result.correctCount / (result.correctCount + result.wrongCount)) * 100)
+                    : 0}
+                  %
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2 justify-center">
-              <Button onClick={onRetake} variant="outline">
-                <RotateCcw className="h-4 w-4" /> Retake exam
+            <div className="mt-6 flex flex-wrap gap-2.5 justify-center">
+              <Button onClick={onRetake} variant="outline" className="font-semibold gap-1.5 shadow-2xs">
+                <RotateCcw className="h-4 w-4" /> Retake Mock Exam
               </Button>
-              <Button onClick={onExit}>
-                Back to exam overview
+              <Button onClick={onExit} className="font-semibold shadow-xs">
+                Back to Syllabus Overview
               </Button>
-              <Button asChild variant="ghost">
-                <Link href={`/exams/${exam.slug}`}>View leaderboard</Link>
+              <Button asChild variant="ghost" className="text-xs">
+                <Link href="/exams">Browse Other Mock Tests</Link>
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Review answers */}
-        <Card className="max-w-3xl mx-auto mt-6">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <ListChecks className="h-5 w-5 text-primary" /> Review Answers &amp; Explanations
-            </CardTitle>
-            <CardDescription>
-              See your answers, the correct answers, and explanations for each question.
-            </CardDescription>
+        {/* Guest Conversion Callout Card */}
+        {isGuest && (
+          <Card className="max-w-3xl mx-auto mt-6 border-primary/40 bg-gradient-to-r from-primary/10 via-background to-primary/10 shadow-xs">
+            <CardContent className="pt-6 pb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="space-y-1 text-center sm:text-left">
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-wider">
+                  <Sparkles className="h-3.5 w-3.5 fill-current" /> Save Your Test History
+                </div>
+                <h3 className="font-bold text-base text-foreground">
+                  Want to record your scores and appear on the official leaderboard?
+                </h3>
+                <p className="text-xs text-muted-foreground max-w-md">
+                  Create a free student account on Khojney to bookmark difficult questions, track your weekly score trends, and compete with peers across Nepal.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button asChild size="sm" className="font-semibold shadow-xs">
+                  <Link href={`/login?mode=register&callbackUrl=/exams/${exam.slug}`}>
+                    Sign Up Free <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="sm" className="shadow-2xs">
+                  <Link href={`/login?callbackUrl=/exams/${exam.slug}`}>
+                    Log In
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Review Answers & Explanations */}
+        <Card className="max-w-3xl mx-auto mt-6 border-border/80 shadow-xs">
+          <CardHeader className="border-b border-border/50 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <ListChecks className="h-5 w-5 text-primary" /> Review Answers &amp; Explanations
+                </CardTitle>
+                <CardDescription className="text-xs mt-0.5">
+                  Learn from your mistakes with step-by-step reasoning for each question.
+                </CardDescription>
+              </div>
+
+              {/* Review Filter Tabs */}
+              <div className="flex gap-1 bg-muted p-1 rounded-lg text-xs font-medium self-start sm:self-auto">
+                {(["all", "incorrect", "correct", "skipped"] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setReviewFilter(f)}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md transition-colors capitalize",
+                      reviewFilter === f
+                        ? "bg-background text-foreground font-semibold shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <Accordion type="multiple" className="w-full">
-              {reviewQuestions.map((q, idx) => {
-                const r = resultMap.get(q.id);
-                const selectedIdx = r?.selectedIdx ?? null;
-                const isCorrect = r?.isCorrect ?? false;
-                const correctIdx = r?.correctIdx;
-                const explanation = r?.explanation;
-                return (
-                  <AccordionItem key={q.id} value={`q-${q.id}`}>
-                    <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center gap-3 text-left">
-                        <span
-                          className={cn(
-                            "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0",
-                            isCorrect
-                              ? "bg-emerald-100 text-emerald-700"
-                              : selectedIdx === null
-                                ? "bg-muted text-muted-foreground"
-                                : "bg-destructive/10 text-destructive",
-                          )}
-                        >
-                          {isCorrect ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : selectedIdx === null ? (
-                            <Circle className="h-4 w-4" />
-                          ) : (
-                            <XCircle className="h-4 w-4" />
-                          )}
-                        </span>
-                        <span className="text-sm font-medium">
-                          Q{idx + 1}. {q.question}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-2 pl-10">
-                        {q.options.map((opt, oIdx) => {
-                          const isCorrectOpt = correctIdx !== undefined && oIdx === correctIdx;
-                          const isUserOpt = oIdx === selectedIdx;
-                          return (
-                            <div
-                              key={oIdx}
-                              className={cn(
-                                "flex items-start gap-2 rounded-md border p-2 text-sm",
-                                isCorrectOpt
-                                  ? "border-emerald-300 bg-emerald-50"
-                                  : isUserOpt
-                                    ? "border-destructive/40 bg-destructive/5"
-                                    : "border-border",
-                              )}
-                            >
-                              <span
+
+          <CardContent className="pt-4">
+            {filteredReviewQuestions.length === 0 ? (
+              <div className="py-10 text-center text-xs text-muted-foreground">
+                No questions match the &ldquo;{reviewFilter}&rdquo; filter.
+              </div>
+            ) : (
+              <Accordion type="multiple" className="w-full">
+                {filteredReviewQuestions.map((q, idx) => {
+                  const r = resultMap.get(q.id);
+                  const selectedIdx = r?.selectedIdx ?? null;
+                  const isCorrect = r?.isCorrect ?? false;
+                  const correctIdx = r?.correctIdx;
+                  const explanation = r?.explanation;
+
+                  return (
+                    <AccordionItem key={q.id} value={`q-${q.id}`} className="border-border/60">
+                      <AccordionTrigger className="hover:no-underline py-3 px-2 rounded-lg hover:bg-muted/40 transition-colors">
+                        <div className="flex items-center gap-3 text-left">
+                          <span
+                            className={cn(
+                              "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shrink-0",
+                              isCorrect
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                : selectedIdx === null
+                                  ? "bg-muted text-muted-foreground"
+                                  : "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+                            )}
+                          >
+                            {isCorrect ? (
+                              <CheckCircle2 className="h-4 w-4" />
+                            ) : selectedIdx === null ? (
+                              <Circle className="h-4 w-4" />
+                            ) : (
+                              <XCircle className="h-4 w-4" />
+                            )}
+                          </span>
+                          <span className="text-sm font-medium leading-snug line-clamp-2">
+                            Q{idx + 1}. {q.question}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-2 pb-4">
+                        <div className="space-y-2 pl-10 pr-2">
+                          {q.options.map((opt, oIdx) => {
+                            const isCorrectOpt = correctIdx !== undefined && oIdx === correctIdx;
+                            const isUserOpt = oIdx === selectedIdx;
+
+                            return (
+                              <div
+                                key={oIdx}
                                 className={cn(
-                                  "flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium shrink-0",
+                                  "flex items-start gap-2.5 rounded-xl border p-2.5 text-xs sm:text-sm",
                                   isCorrectOpt
-                                    ? "bg-emerald-600 text-white"
+                                    ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100 font-medium"
                                     : isUserOpt
-                                      ? "bg-destructive text-white"
-                                      : "bg-muted text-muted-foreground",
+                                      ? "border-rose-500/50 bg-rose-500/10 text-rose-950 dark:text-rose-100 font-medium"
+                                      : "border-border/60 bg-card text-muted-foreground",
                                 )}
                               >
-                                {String.fromCharCode(65 + oIdx)}
-                              </span>
-                              <span className="flex-1">{opt}</span>
-                              {isCorrectOpt && (
-                                <Badge className="bg-emerald-600 text-xs">Correct</Badge>
-                              )}
-                              {isUserOpt && !isCorrectOpt && (
-                                <Badge variant="destructive" className="text-xs">
-                                  Your answer
-                                </Badge>
-                              )}
+                                <span
+                                  className={cn(
+                                    "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold shrink-0 mt-0.5",
+                                    isCorrectOpt
+                                      ? "bg-emerald-600 text-white"
+                                      : isUserOpt
+                                        ? "bg-rose-600 text-white"
+                                        : "bg-muted text-muted-foreground",
+                                  )}
+                                >
+                                  {String.fromCharCode(65 + oIdx)}
+                                </span>
+                                <span className="flex-1">{opt}</span>
+                                {isCorrectOpt && (
+                                  <Badge className="bg-emerald-600 text-white text-[10px] py-0 px-2 shrink-0">
+                                    Correct Answer
+                                  </Badge>
+                                )}
+                                {isUserOpt && !isCorrectOpt && (
+                                  <Badge variant="destructive" className="text-[10px] py-0 px-2 shrink-0">
+                                    Your Choice
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
+
+                          {explanation && (
+                            <div className="mt-3 rounded-xl bg-muted/60 border border-border/60 p-3.5 text-xs">
+                              <p className="font-bold text-foreground mb-1 flex items-center gap-1">
+                                <Sparkles className="h-3.5 w-3.5 text-primary" /> Syllabus Explanation
+                              </p>
+                              <p className="text-muted-foreground leading-relaxed">{explanation}</p>
                             </div>
-                          );
-                        })}
-                        {explanation && (
-                          <div className="mt-3 rounded-md bg-muted p-3 text-sm">
-                            <p className="font-medium text-xs text-muted-foreground mb-1">
-                              Explanation
-                            </p>
-                            <p className="text-foreground">{explanation}</p>
-                          </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -906,12 +1249,12 @@ function Breakdown({
   color: string;
 }) {
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="rounded-xl border border-border/80 bg-card p-3 shadow-2xs">
       <div className="flex items-center justify-center gap-1.5 mb-1">
         {icon}
-        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-[11px] text-muted-foreground font-medium">{label}</span>
       </div>
-      <p className={cn("text-2xl font-bold", color)}>{value}</p>
+      <p className={cn("text-2xl font-black", color)}>{value}</p>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Clock, FileText, Trophy, ArrowRight, Users, Play, Zap } from "lucide-react";
+import { Clock, FileText, Trophy, ArrowRight, Users, Play, Zap, Layers } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-interface FeaturedExam {
+export interface FeaturedExam {
   id: string;
   slug: string;
   title: string;
@@ -13,7 +13,8 @@ interface FeaturedExam {
   totalMarks: number;
   difficulty: string;
   examType: string;
-  _count: { questions: number; attempts: number };
+  isParent?: boolean;
+  _count: { questions: number; attempts: number; children?: number };
 }
 
 export function FeaturedExams({ exams }: { exams: FeaturedExam[] }) {
@@ -34,10 +35,10 @@ export function FeaturedExams({ exams }: { exams: FeaturedExam[] }) {
               <Zap className="h-3.5 w-3.5 fill-current" /> Instant Entrance Engine
             </div>
             <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-              Free Mock Exams & Tests
+              Free Mock Exams &amp; Tests
             </h2>
             <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-xl">
-              Practice real syllabus questions with timed simulation, negative marking, and instant result cards.
+              Practice real syllabus questions with timed simulation, negative marking, and instant result cards. 100% free with no sign-in required.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex shadow-2xs">
@@ -46,72 +47,86 @@ export function FeaturedExams({ exams }: { exams: FeaturedExam[] }) {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {exams.map((e) => (
-            <Card key={e.id} className="group flex flex-col justify-between rounded-2xl border border-border bg-card shadow-xs hover:border-primary/50 hover:shadow-md transition-all duration-200">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <Badge variant="secondary" className="text-[11px] font-semibold uppercase tracking-wider">
-                    {e.examType.replace("_", " ")}
-                  </Badge>
-                  <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${difficultyStyle[e.difficulty] ?? difficultyStyle.MEDIUM}`}>
-                    {e.difficulty}
-                  </span>
-                </div>
-                <CardTitle className="text-lg font-bold leading-snug">
-                  <Link href={`/exams/${e.slug}`} className="hover:text-primary transition-colors line-clamp-2">
-                    {e.title}
-                  </Link>
-                </CardTitle>
-              </CardHeader>
+          {exams.map((e) => {
+            const isMultiSet = e.isParent || (e._count.children !== undefined && e._count.children > 0);
+            const childSetsCount = e._count.children && e._count.children > 0 ? e._count.children : 5;
 
-              <CardContent className="flex-1 pb-3">
-                <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                  {e.description}
-                </p>
-
-                <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
-                  <div className="flex flex-col items-center p-2 rounded-xl bg-muted/50 border border-border/40">
-                    <Clock className="h-4 w-4 text-primary mb-1" />
-                    <span className="font-bold text-foreground tabular-nums">{e.durationMin}m</span>
-                    <span className="text-[10px] text-muted-foreground">Timer</span>
+            return (
+              <Card key={e.id} className="group flex flex-col justify-between rounded-2xl border border-border bg-card shadow-xs hover:border-primary/50 hover:shadow-md transition-all duration-200">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <Badge variant="secondary" className="text-[11px] font-semibold uppercase tracking-wider">
+                      {isMultiSet ? "Mock Series" : e.examType.replace("_", " ")}
+                    </Badge>
+                    <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-semibold border ${difficultyStyle[e.difficulty] ?? difficultyStyle.MEDIUM}`}>
+                      {e.difficulty}
+                    </span>
                   </div>
-                  <div className="flex flex-col items-center p-2 rounded-xl bg-muted/50 border border-border/40">
-                    <FileText className="h-4 w-4 text-primary mb-1" />
-                    <span className="font-bold text-foreground tabular-nums">{e._count.questions}</span>
-                    <span className="text-[10px] text-muted-foreground">Questions</span>
-                  </div>
-                  <div className="flex flex-col items-center p-2 rounded-xl bg-muted/50 border border-border/40">
-                    <Trophy className="h-4 w-4 text-primary mb-1" />
-                    <span className="font-bold text-foreground tabular-nums">{e.totalMarks}</span>
-                    <span className="text-[10px] text-muted-foreground">Total Marks</span>
-                  </div>
-                </div>
+                  <CardTitle className="text-lg font-bold leading-snug">
+                    <Link href={`/exams/${e.slug}`} className="hover:text-primary transition-colors line-clamp-2">
+                      {e.title}
+                    </Link>
+                  </CardTitle>
+                </CardHeader>
 
-                <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/60">
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5 text-primary" /> {e._count.attempts.toLocaleString()} taken
-                  </span>
-                  <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                    Immediate Scoring
-                  </span>
-                </div>
-              </CardContent>
+                <CardContent className="flex-1 pb-3">
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                    {e.description}
+                  </p>
 
-              {/* Dual-Action Split: 1-Click Fast Path + Syllabus Link */}
-              <CardFooter className="pt-2 pb-4 flex items-center gap-2">
-                <Button asChild size="sm" className="flex-1 font-semibold gap-1.5 shadow-xs">
-                  <Link href={`/exams/${e.slug}/take`}>
-                    <Play className="h-3.5 w-3.5 fill-current" /> 1-Click Take
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="sm" className="px-3 shadow-2xs">
-                  <Link href={`/exams/${e.slug}`}>
-                    Syllabus
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                  <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
+                    <div className="flex flex-col items-center p-2 rounded-xl bg-muted/50 border border-border/40">
+                      <Clock className="h-4 w-4 text-primary mb-1" />
+                      <span className="font-bold text-foreground tabular-nums">{e.durationMin}m</span>
+                      <span className="text-[10px] text-muted-foreground">Timer</span>
+                    </div>
+                    <div className="flex flex-col items-center p-2 rounded-xl bg-muted/50 border border-border/40">
+                      {isMultiSet ? (
+                        <Layers className="h-4 w-4 text-primary mb-1" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-primary mb-1" />
+                      )}
+                      <span className="font-bold text-foreground tabular-nums">
+                        {isMultiSet ? `${childSetsCount} Sets` : e._count.questions}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {isMultiSet ? "Series" : "Questions"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center p-2 rounded-xl bg-muted/50 border border-border/40">
+                      <Trophy className="h-4 w-4 text-primary mb-1" />
+                      <span className="font-bold text-foreground tabular-nums">{e.totalMarks || 100}</span>
+                      <span className="text-[10px] text-muted-foreground">Total Marks</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/60">
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5 text-primary" /> {e._count.attempts.toLocaleString()} taken
+                    </span>
+                    <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                      Immediate Scoring
+                    </span>
+                  </div>
+                </CardContent>
+
+                {/* Dual-Action Split: 1-Click Fast Path + Syllabus Link */}
+                <CardFooter className="pt-2 pb-4 flex items-center gap-2">
+                  <Button asChild size="sm" className="flex-1 font-semibold gap-1.5 shadow-xs">
+                    <Link href={`/exams/${e.slug}/take`}>
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                      {isMultiSet ? "Start Mock Series" : "1-Click Take"}
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="sm" className="px-3 shadow-2xs">
+                    <Link href={`/exams/${e.slug}`}>
+                      Syllabus
+                    </Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
 
         <div className="mt-8 text-center sm:hidden">

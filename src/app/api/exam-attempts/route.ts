@@ -1,59 +1,115 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
+import { examAttemptLimiter } from "@/lib/rate-limit";
 
-interface StartPayload {
-  examId: string;
-  action: "start";
-}
+const startSchema = z.object({
+  action: z.literal("start"),
+  examId: z.string().min(1, "examId is required"),
+});
 
-interface SubmitPayload {
-  action: "submit";
-  attemptId: string;
-  answers: Record<string, number | null>;
-}
+const submitSchema = z.object({
+  action: z.literal("submit"),
+  attemptId: z.string().min(1, "attemptId is required"),
+  answers: z.record(z.string(), z.number().nullable()).default({}),
+  examId: z.string().optional(),
+  durationSec: z.number().optional(),
+});
 
-type Payload = Partial<StartPayload> & Partial<SubmitPayload> & { action?: string };
+const guestSubmitSchema = z.object({
+  action: z.literal("guest-submit"),
+  examId: z.string().min(1, "examId is required"),
+  answers: z.record(z.string(), z.number().nullable()).default({}),
+  durationSec: z.number().optional(),
+});
 
 /**
  * Exam attempts API.
  *
  * POST /api/exam-attempts
- *   Body: { examId, action: "start" } -> creates an attempt, returns { attemptId }
- *   Body: { action: "submit", attemptId, answers } -> grades & returns result
+ *   - Start: { examId, action: "start" }
+ *     Creates an attempt for logged-in users, or returns guest token for guest users.
+ *   - Submit: { action: "submit", attemptId, answers }
+ *     Grades and persists attempt for logged-in users.
+ *   - Guest Submit: { action: "guest-submit" | "submit" (with attemptId="guest"), examId, answers }
+ *     Instant server grading for guest users without account barrier.
  */
 export async function POST(req: NextRequest) {
+  // Rate limiting per IP / User
   const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
+  const limit = examAttemptLimiter.check(session?.id ?? ip);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many attempts. Please wait a moment before trying again." },
+      { status: 429 }
+    );
   }
 
-  let body: Payload;
+  let body: unknown;
   try {
-    body = (await req.json()) as Payload;
+    body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (body.action === "start") {
-    return handleStart(session.id, body.examId);
+  // Determine action
+  const action = typeof body === "object" && body !== null && "action" in body ? (body as { action: unknown }).action : null;
+
+  if (action === "start") {
+    const parse = startSchema.safeParse(body);
+    if (!parse.success) {
+      return NextResponse.json({ error: parse.error.issues[0]?.message ?? "Invalid start payload" }, { status: 400 });
+    }
+    return handleStart(session?.id, parse.data.examId);
   }
-  if (body.action === "submit") {
-    return handleSubmit(session.id, body.attemptId, body.answers ?? {});
+
+  if (action === "guest-submit") {
+    const parse = guestSubmitSchema.safeParse(body);
+    if (!parse.success) {
+      return NextResponse.json({ error: parse.error.issues[0]?.message ?? "Invalid guest submission payload" }, { status: 400 });
+    }
+    return handleGuestSubmit(parse.data.examId, parse.data.answers, parse.data.durationSec);
   }
+
+  if (action === "submit") {
+    const parse = submitSchema.safeParse(body);
+    if (!parse.success) {
+      return NextResponse.json({ error: parse.error.issues[0]?.message ?? "Invalid submit payload" }, { status: 400 });
+    }
+
+    // Guest submission routed through "submit" action with attemptId: "guest"
+    if (parse.data.attemptId === "guest" || !session) {
+      if (!parse.data.examId) {
+        return NextResponse.json({ error: "examId is required for guest evaluation" }, { status: 400 });
+      }
+      return handleGuestSubmit(parse.data.examId, parse.data.answers, parse.data.durationSec);
+    }
+
+    return handleSubmit(session.id, parse.data.attemptId, parse.data.answers);
+  }
+
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 }
 
-async function handleStart(userId: string, examId?: string) {
+async function handleStart(userId?: string, examId?: string) {
   if (!examId) {
     return NextResponse.json({ error: "examId is required" }, { status: 400 });
   }
+
   const exam = await db.exam.findUnique({
     where: { id: examId },
     select: { id: true, totalMarks: true, isPublished: true },
   });
+
   if (!exam || !exam.isPublished) {
     return NextResponse.json({ error: "Exam not found" }, { status: 404 });
+  }
+
+  // If user is guest (not authenticated), return guest mode token immediately without blocking
+  if (!userId) {
+    return NextResponse.json({ attemptId: "guest", isGuest: true });
   }
 
   const attempt = await db.examAttempt.create({
@@ -65,18 +121,98 @@ async function handleStart(userId: string, examId?: string) {
     },
   });
 
-  return NextResponse.json({ attemptId: attempt.id });
+  return NextResponse.json({ attemptId: attempt.id, isGuest: false });
+}
+
+async function handleGuestSubmit(
+  examId: string,
+  answers: Record<string, number | null>,
+  durationSec?: number
+) {
+  const exam = await db.exam.findUnique({
+    where: { id: examId },
+    include: {
+      questions: { orderBy: { order: "asc" } },
+    },
+  });
+
+  if (!exam || !exam.isPublished) {
+    return NextResponse.json({ error: "Exam not found" }, { status: 404 });
+  }
+
+  let correctCount = 0;
+  let wrongCount = 0;
+  let score = 0;
+  const perQuestion: Array<{
+    questionId: string;
+    selectedIdx: number | null;
+    isCorrect: boolean;
+    correctIdx: number;
+    explanation: string | null;
+  }> = [];
+
+  for (const q of exam.questions) {
+    const selectedIdx = answers[q.id] ?? null;
+    const isCorrect = selectedIdx !== null && selectedIdx === q.correctIdx;
+    if (selectedIdx === null) {
+      perQuestion.push({
+        questionId: q.id,
+        selectedIdx: null,
+        isCorrect: false,
+        correctIdx: q.correctIdx,
+        explanation: q.explanation,
+      });
+      continue;
+    }
+
+    if (isCorrect) {
+      correctCount++;
+      score += q.marks;
+    } else {
+      wrongCount++;
+      if (exam.negativeMarking && exam.negativeMarkValue > 0) {
+        score = Math.max(0, score - exam.negativeMarkValue);
+      }
+    }
+
+    perQuestion.push({
+      questionId: q.id,
+      selectedIdx,
+      isCorrect,
+      correctIdx: q.correctIdx,
+      explanation: q.explanation,
+    });
+  }
+
+  // Estimate rank against historical submissions
+  const higherCount = await db.examAttempt.count({
+    where: {
+      examId: exam.id,
+      finishedAt: { not: null },
+      score: { gt: score },
+    },
+  });
+  const rank = higherCount + 1;
+
+  return NextResponse.json({
+    score: Math.round(score * 100) / 100,
+    correctCount,
+    wrongCount,
+    unansweredCount: exam.questions.length - correctCount - wrongCount,
+    totalMarks: exam.totalMarks,
+    durationSec: durationSec ?? 0,
+    rank,
+    passingMarks: exam.passingMarks,
+    perQuestion,
+    isGuest: true,
+  });
 }
 
 async function handleSubmit(
   userId: string,
-  attemptId: string | undefined,
-  answers: Record<string, number | null>,
+  attemptId: string,
+  answers: Record<string, number | null>
 ) {
-  if (!attemptId) {
-    return NextResponse.json({ error: "attemptId is required" }, { status: 400 });
-  }
-
   const attempt = await db.examAttempt.findUnique({
     where: { id: attemptId },
     include: {
@@ -93,11 +229,10 @@ async function handleSubmit(
   if (attempt.finishedAt) {
     return NextResponse.json(
       { error: "Attempt already submitted" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  // Compute score
   let correctCount = 0;
   let wrongCount = 0;
   let score = 0;
@@ -127,6 +262,9 @@ async function handleSubmit(
       score += q.marks;
     } else {
       wrongCount++;
+      if (attempt.exam.negativeMarking && attempt.exam.negativeMarkValue > 0) {
+        score = Math.max(0, score - attempt.exam.negativeMarkValue);
+      }
     }
     perQuestion.push({
       questionId: q.id,
@@ -140,10 +278,9 @@ async function handleSubmit(
   const now = new Date();
   const durationSec = Math.max(
     0,
-    Math.round((now.getTime() - attempt.startedAt.getTime()) / 1000),
+    Math.round((now.getTime() - attempt.startedAt.getTime()) / 1000)
   );
 
-  // Rank: count attempts on this exam with strictly higher score, then +1
   const higherCount = await db.examAttempt.count({
     where: {
       examId: attempt.examId,
@@ -153,10 +290,12 @@ async function handleSubmit(
   });
   const rank = higherCount + 1;
 
+  const roundedScore = Math.round(score * 100) / 100;
+
   await db.examAttempt.update({
     where: { id: attempt.id },
     data: {
-      score,
+      score: roundedScore,
       correctCount,
       wrongCount,
       durationSec,
@@ -171,14 +310,14 @@ async function handleSubmit(
     data: {
       userId,
       title: "Exam Result Published",
-      message: `You scored ${score}/${attempt.totalMarks} on ${attempt.exam.title}.`,
+      message: `You scored ${roundedScore}/${attempt.totalMarks} on ${attempt.exam.title}.`,
       type: "EXAM_RESULT",
       link: `/exams/${attempt.exam.slug}`,
     },
   });
 
   return NextResponse.json({
-    score,
+    score: roundedScore,
     correctCount,
     wrongCount,
     unansweredCount: attempt.exam.questions.length - correctCount - wrongCount,
@@ -187,5 +326,6 @@ async function handleSubmit(
     rank,
     passingMarks: attempt.exam.passingMarks,
     perQuestion,
+    isGuest: false,
   });
 }

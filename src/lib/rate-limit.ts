@@ -115,3 +115,9 @@ export const contactLimiter = new RateLimiter({
   windowMs: 60 * 60 * 1000,
   max: 5,
 });
+
+/** 30 exam attempt actions (starts or submissions) per minute per user/IP. */
+export const examAttemptLimiter = new RateLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+});

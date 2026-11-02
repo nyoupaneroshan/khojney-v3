@@ -47,8 +47,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     insuranceCompanies,
   ] = await Promise.all([
     db.exam.findMany({
-      where: { isPublished: true, parentId: null },
-      select: { slug: true, updatedAt: true, categoryId: true, category: { select: { slug: true } } },
+      where: { isPublished: true },
+      select: {
+        slug: true,
+        updatedAt: true,
+        isParent: true,
+        categoryId: true,
+        category: { select: { slug: true } },
+      },
     }),
     db.category.findMany({
       where: { module: "EXAM" },
@@ -83,10 +89,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         url: `${base}/mock-exams/${e.category!.slug}/${e.slug}`,
         lastModified: e.updatedAt,
         changeFrequency: "weekly" as const,
-        priority: 0.9,
+        priority: e.isParent ? 0.9 : 0.85,
       })),
-    // Legacy exam pages (still valid)
-    ...exams.map((e) => ({ url: `${base}/exams/${e.slug}`, lastModified: e.updatedAt, changeFrequency: "weekly" as const, priority: 0.7 })),
+    // All exams & sets: /exams/[slug]
+    ...exams.map((e) => ({
+      url: `${base}/exams/${e.slug}`,
+      lastModified: e.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: e.isParent ? 0.9 : 0.85,
+    })),
     ...colleges.map((c) => ({ url: `${base}/colleges/${c.slug}`, lastModified: c.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
     ...schools.map((s) => ({ url: `${base}/schools/${s.slug}`, lastModified: s.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
     ...universities.map((u) => ({ url: `${base}/universities/${u.slug}`, lastModified: u.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),

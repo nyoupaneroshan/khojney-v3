@@ -19,10 +19,17 @@ import { FileQuestion } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Mock Exams & Practice Tests",
+  title: "Free Mock Exams & Online Practice Tests in Nepal | Khojney",
   description:
-    "Free online mock exams and practice tests for IOE, MBBS, CMAT, Loksewa, Driving License, and more. Instant scoring, detailed explanations.",
+    "Take 100% free online mock exams in Nepal for IOE, CEE, CMAT, Loksewa (Kharidar, Subba, Officer), Nepal Driving License, Banking, and Police. Instant scoring and detailed explanations.",
   alternates: { canonical: "/exams" },
+  openGraph: {
+    title: "Free Mock Exams & Online Practice Tests in Nepal | Khojney",
+    description:
+      "Take 100% free online mock exams in Nepal for IOE, CEE, CMAT, Loksewa, Driving License, Banking, and Police. Instant scoring and detailed explanations.",
+    url: "/exams",
+    type: "website",
+  },
 };
 
 export const dynamic = "force-dynamic";
@@ -196,6 +203,8 @@ export default async function ExamsListPage({
                       categoryName: e.category?.name ?? null,
                       questionCount: e._count.questions,
                       attemptCount: e._count.attempts,
+                      isParent: e.isParent,
+                      setCount: e._count.children,
                     }}
                   />
                 ))}
