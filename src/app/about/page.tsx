@@ -6,8 +6,18 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
 
 export const metadata: Metadata = {
-  title: "About Khojney",
-  description: "Khojney is on a mission to organize every exam, college, scholarship, and resource in Nepal into one accessible platform.",
+  title: "About Us — Nepal's Premier Knowledge & Directory Platform | Khojney",
+  description:
+    "Learn about Khojney's mission to organize every exam, college, scholarship, and public service in Nepal into one free, verified, and accessible platform.",
+  alternates: {
+    canonical: "/about",
+  },
+  openGraph: {
+    title: "About Us — Nepal's Premier Knowledge & Directory Platform | Khojney",
+    description:
+      "Learn about Khojney's mission to organize every exam, college, scholarship, and public service in Nepal into one free, verified, and accessible platform.",
+    url: "/about",
+  },
 };
 
 export const dynamic = "force-dynamic";

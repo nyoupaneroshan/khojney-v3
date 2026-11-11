@@ -1,4 +1,4 @@
-// Khojney Nepal Homepage
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Play, ArrowRight, Sparkles, ShieldCheck, Cog, Stethoscope, GraduationCap, Landmark, Car, BookOpen } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
@@ -34,6 +34,23 @@ import {
   getCachedFeaturedInsurance,
   getCachedHomepageStats,
 } from "@/lib/cache";
+
+export const metadata: Metadata = {
+  title: "Khojney — Free Mock Tests, Colleges, Scholarships & Nepal Information Portal",
+  description:
+    "Nepal's all-in-one portal: practice Loksewa, CMAT, IOE, CEE & Driving License mock tests. Explore 70+ colleges, universities, scholarships, NEPSE stocks, banks, and hospitals.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Khojney — Free Mock Tests, Colleges, Scholarships & Nepal Information Portal",
+    description:
+      "Nepal's all-in-one portal: practice Loksewa, CMAT, IOE, CEE & Driving License mock tests. Explore 70+ colleges, universities, scholarships, NEPSE stocks, banks, and hospitals.",
+    url: "https://khojney.com",
+    siteName: "Khojney",
+    images: [{ url: "/og-default.png", width: 1200, height: 630, alt: "Khojney" }],
+  },
+};
 
 // Page-level ISR: revalidate the entire homepage every hour.
 // Per-query caches (in @/lib/cache) layer on top with their own windows.

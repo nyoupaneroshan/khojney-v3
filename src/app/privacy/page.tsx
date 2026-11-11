@@ -3,8 +3,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { getSession } from "@/lib/auth-server";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy",
+  title: "Privacy Policy | Khojney",
   description: "How Khojney collects, uses, and protects your personal information.",
+  alternates: {
+    canonical: "/privacy",
+  },
 };
 
 export const dynamic = "force-dynamic";

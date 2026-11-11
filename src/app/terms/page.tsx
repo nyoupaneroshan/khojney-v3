@@ -3,8 +3,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { getSession } from "@/lib/auth-server";
 
 export const metadata: Metadata = {
-  title: "Terms of Service",
+  title: "Terms of Service | Khojney",
   description: "The terms and conditions for using Khojney's services.",
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export const dynamic = "force-dynamic";

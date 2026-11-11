@@ -5,8 +5,18 @@ import { getSession } from "@/lib/auth-server";
 import { CompareTool } from "@/components/khojney/compare-tool";
 
 export const metadata: Metadata = {
-  title: "Compare Colleges & Schools",
-  description: "Compare colleges and schools in Nepal side by side — fees, programs, ratings, facilities, and more.",
+  title: "Compare Colleges & Schools in Nepal Side by Side | Khojney",
+  description:
+    "Compare colleges and schools in Nepal side by side — compare fees, academic programs, student ratings, facilities, and university affiliations.",
+  alternates: {
+    canonical: "/compare",
+  },
+  openGraph: {
+    title: "Compare Colleges & Schools in Nepal Side by Side | Khojney",
+    description:
+      "Compare colleges and schools in Nepal side by side — compare fees, academic programs, student ratings, facilities, and university affiliations.",
+    url: "/compare",
+  },
 };
 
 export const dynamic = "force-dynamic";

@@ -13,6 +13,8 @@ import { MUTUAL_FUNDS_DATA } from "./data/mutual-funds";
 import { INSURANCE_COMPANIES_DATA } from "./data/insurance";
 import { GOVERNMENT_SERVICES_DATA } from "./data/government-services";
 import { SCHOLARSHIPS_DATA } from "./data/scholarships";
+import { SCHOOLS_DATA } from "./data/schools";
+import { JOBS_DATA } from "./data/jobs";
 
 function escapeSql(str: string | null | undefined): string {
   if (str === null || str === undefined) return "NULL";
@@ -489,4 +491,92 @@ export function generateExamsSqlStatements(): string[] {
 
   return statements;
 }
+
+export function generateSchoolsSql(): string {
+  const rows = SCHOOLS_DATA.map((s) => {
+    return `(
+      gen_random_uuid()::text, ${escapeSql(s.slug)}, ${escapeSql(s.name)}, ${escapeSql(s.description)},
+      ${escapeSql(s.province)}, ${escapeSql(s.district)}, ${escapeSql(s.city)}, ${escapeSql(s.address)},
+      ${escapeSql(s.level)}, ${escapeSql(s.type)}, ${escapeSql(s.affiliation)}, ${s.establishedYear},
+      ${escapeSql(s.phone)}, ${escapeSql(s.email)}, ${escapeSql(s.website)},
+      ${escapeSql(s.facilities)}, ${escapeSql(s.programs)}, ${escapeSql(s.feesRange)}, ${escapeSql(s.admissionProcess)},
+      ${s.rating}, ${s.reviewCount}, ${s.isFeatured}, ${s.isVerified}, ${s.isPublished}, NOW(), NOW()
+    )`;
+  }).join(",\n");
+
+  return `INSERT INTO "School" (
+    "id", "slug", "name", "description",
+    "province", "district", "city", "address",
+    "level", "type", "affiliation", "establishedYear",
+    "phone", "email", "website",
+    "facilities", "programs", "feesRange", "admissionProcess",
+    "rating", "reviewCount", "isFeatured", "isVerified", "isPublished",
+    "createdAt", "updatedAt"
+  ) VALUES \n${rows}
+  ON CONFLICT ("slug") DO UPDATE SET
+    "name" = EXCLUDED."name",
+    "description" = EXCLUDED."description",
+    "province" = EXCLUDED."province",
+    "district" = EXCLUDED."district",
+    "city" = EXCLUDED."city",
+    "address" = EXCLUDED."address",
+    "level" = EXCLUDED."level",
+    "type" = EXCLUDED."type",
+    "affiliation" = EXCLUDED."affiliation",
+    "establishedYear" = EXCLUDED."establishedYear",
+    "phone" = EXCLUDED."phone",
+    "email" = EXCLUDED."email",
+    "website" = EXCLUDED."website",
+    "facilities" = EXCLUDED."facilities",
+    "programs" = EXCLUDED."programs",
+    "feesRange" = EXCLUDED."feesRange",
+    "admissionProcess" = EXCLUDED."admissionProcess",
+    "rating" = EXCLUDED."rating",
+    "reviewCount" = EXCLUDED."reviewCount",
+    "isFeatured" = EXCLUDED."isFeatured",
+    "isVerified" = EXCLUDED."isVerified",
+    "isPublished" = EXCLUDED."isPublished",
+    "updatedAt" = NOW();`;
+}
+
+export function generateJobsSql(): string {
+  const rows = JOBS_DATA.map((j) => {
+    return `(
+      gen_random_uuid()::text, ${escapeSql(j.slug)}, ${escapeSql(j.title)}, ${escapeSql(j.description)},
+      ${escapeSql(j.company)}, ${escapeSql(j.location)}, ${escapeSql(j.jobType)}, ${escapeSql(j.category)},
+      ${escapeSql(j.experienceLevel)}, ${j.salaryMin}, ${j.salaryMax}, ${escapeSql(j.salaryCurrency)},
+      ${escapeSql(j.applicationUrl)}, ${escapeSql(j.applicationEmail)}, ${escapeSql(j.deadline)}::timestamp,
+      ${escapeSql(j.skills)}, ${escapeSql(j.qualifications)}, ${j.views},
+      ${j.isFeatured}, ${j.isPublished}, NOW(), NOW()
+    )`;
+  }).join(",\n");
+
+  return `INSERT INTO "Job" (
+    "id", "slug", "title", "description", "company", "location", "jobType", "category",
+    "experienceLevel", "salaryMin", "salaryMax", "salaryCurrency",
+    "applicationUrl", "applicationEmail", "deadline", "skills", "qualifications", "views",
+    "isFeatured", "isPublished", "createdAt", "updatedAt"
+  ) VALUES \n${rows}
+  ON CONFLICT ("slug") DO UPDATE SET
+    "title" = EXCLUDED."title",
+    "description" = EXCLUDED."description",
+    "company" = EXCLUDED."company",
+    "location" = EXCLUDED."location",
+    "jobType" = EXCLUDED."jobType",
+    "category" = EXCLUDED."category",
+    "experienceLevel" = EXCLUDED."experienceLevel",
+    "salaryMin" = EXCLUDED."salaryMin",
+    "salaryMax" = EXCLUDED."salaryMax",
+    "salaryCurrency" = EXCLUDED."salaryCurrency",
+    "applicationUrl" = EXCLUDED."applicationUrl",
+    "applicationEmail" = EXCLUDED."applicationEmail",
+    "deadline" = EXCLUDED."deadline",
+    "skills" = EXCLUDED."skills",
+    "qualifications" = EXCLUDED."qualifications",
+    "views" = EXCLUDED."views",
+    "isFeatured" = EXCLUDED."isFeatured",
+    "isPublished" = EXCLUDED."isPublished",
+    "updatedAt" = NOW();`;
+}
+
 

@@ -729,4 +729,192 @@ export const UNIVERSITIES_DATA: UniversitySeedItem[] = [
     isFeatured: false,
     isPublished: true,
   },
+  {
+    slug: "nepal-open-university",
+    name: "Nepal Open University (NOU)",
+    description: "Nepal Open University (NOU), established by an Act of Parliament in 2016 (2073 BS), is Nepal's premier and only national open university dedicated to delivering distance, online, and blended higher education to learners across Nepal and the Nepali diaspora worldwide.",
+    establishedYear: 2016,
+    province: "Bagmati",
+    city: "Manbhawan, Lalitpur",
+    address: "Central Campus, Manbhawan, Lalitpur, Nepal",
+    phone: "+977-1-5521253",
+    email: "info@nou.edu.np",
+    website: "https://nou.edu.np",
+    type: "PUBLIC",
+    ranking: 11,
+    totalCampuses: 1,
+    totalStudents: 3200,
+    faculties: JSON.stringify([
+      "Faculty of Social Sciences and Education",
+      "Faculty of Science, Health and Technology",
+      "Faculty of Management and Law"
+    ]),
+    programs: JSON.stringify([
+      { faculty: "Faculty of Management and Law", level: "MASTERS", name: "MBA / Master of Laws (LLM)", duration: "2 Years" },
+      { faculty: "Faculty of Science, Health and Technology", level: "MASTERS", name: "MSc in ICT / Cyber Security / Natural Resource Management", duration: "2 Years" },
+      { faculty: "Faculty of Social Sciences and Education", level: "BACHELORS", name: "Bachelor of Arts / B.Ed", duration: "4 Years" },
+      { faculty: "Faculty of Social Sciences and Education", level: "PHD", name: "M.Phil / Ph.D. in Education / Law", duration: "3-5 Years" }
+    ]),
+    admissionProcess: "Online entrance evaluation and distance learning admission portal.",
+    notices: JSON.stringify([
+      { title: "NOU Semester Online Admission Notice", date: "2026-08-10", link: "https://nou.edu.np" }
+    ]),
+    results: JSON.stringify([
+      { title: "Semester Online Exam Results", date: "2026-07-20", link: "https://nou.edu.np" }
+    ]),
+    rating: 4.4,
+    reviewCount: 62,
+    isFeatured: true,
+    isPublished: true,
+  },
+  {
+    slug: "madhesh-university",
+    name: "Madhesh University",
+    description: "Madhesh University is a provincial public university established in 2022 by the Government of Madhesh Province in Birgunj. It focuses on accessible professional higher education in Law, Public Administration, and Management for the Terai-Madhesh region.",
+    establishedYear: 2022,
+    province: "Madhesh",
+    city: "Birgunj, Parsa",
+    address: "Main Campus, Birgunj, Parsa District, Madhesh Province, Nepal",
+    phone: "+977-51-522105",
+    email: "info@mu.edu.np",
+    website: "https://mu.edu.np",
+    type: "PUBLIC",
+    ranking: 18,
+    totalCampuses: 1,
+    totalStudents: 450,
+    faculties: JSON.stringify([
+      "Faculty of Law",
+      "Faculty of Management",
+      "Faculty of Humanities and Social Sciences"
+    ]),
+    programs: JSON.stringify([
+      { faculty: "Faculty of Law", level: "BACHELORS", name: "B.A. LL.B (5-Year Integrated)", duration: "5 Years" },
+      { faculty: "Faculty of Management", level: "BACHELORS", name: "BBA (Bachelor of Business Administration)", duration: "4 Years" },
+      { faculty: "Faculty of Management", level: "MASTERS", name: "MBA (Executive)", duration: "2 Years" }
+    ]),
+    admissionProcess: "Provincial merit entrance examination and academic interview.",
+    notices: JSON.stringify([
+      { title: "BALLB Entrance Examination Call", date: "2026-08-05", link: "https://mu.edu.np" }
+    ]),
+    results: JSON.stringify([
+      { title: "Undergraduate Admission Merit List", date: "2026-07-18", link: "https://mu.edu.np" }
+    ]),
+    rating: 4.1,
+    reviewCount: 22,
+    isFeatured: false,
+    isPublished: true,
+  },
+  {
+    slug: "lumbini-technological-university",
+    name: "Lumbini Technological University (LTU)",
+    description: "Lumbini Technological University (LTU), established in 2022 in Banke by the Lumbini Provincial Assembly, is the first provincial university specializing in engineering, emerging technologies, computer science, and agricultural innovation in western Nepal.",
+    establishedYear: 2022,
+    province: "Lumbini",
+    city: "Nepalgunj, Banke",
+    address: "Central Campus, Khajura / Nepalgunj, Banke District, Lumbini Province, Nepal",
+    phone: "+977-81-560124",
+    email: "info@ltu.edu.np",
+    website: "https://ltu.edu.np",
+    type: "PUBLIC",
+    ranking: 17,
+    totalCampuses: 1,
+    totalStudents: 380,
+    faculties: JSON.stringify([
+      "School of Information Technology",
+      "School of Engineering",
+      "School of Applied Sciences"
+    ]),
+    programs: JSON.stringify([
+      { faculty: "School of Information Technology", level: "BACHELORS", name: "B.Tech in Artificial Intelligence & Data Science", duration: "4 Years" },
+      { faculty: "School of Engineering", level: "BACHELORS", name: "B.Tech in Computer Engineering", duration: "4 Years" },
+      { faculty: "School of Applied Sciences", level: "BACHELORS", name: "B.Tech in Agri-Tech & Smart Farming", duration: "4 Years" }
+    ]),
+    admissionProcess: "LTU Technical Entrance Examination (Objective MCQ test).",
+    notices: JSON.stringify([
+      { title: "B.Tech AI & Data Science Admission Open", date: "2026-08-15", link: "https://ltu.edu.np" }
+    ]),
+    results: JSON.stringify([
+      { title: "Entrance Merit List 2083", date: "2026-07-28", link: "https://ltu.edu.np" }
+    ]),
+    rating: 4.3,
+    reviewCount: 28,
+    isFeatured: false,
+    isPublished: true,
+  },
+  {
+    slug: "madan-bhandari-academy-of-health-sciences",
+    name: "Madan Bhandari Academy of Health Sciences (MBAHS)",
+    description: "Madan Bhandari Academy of Health Sciences (MBAHS) is an autonomous provincial health science university established in 2020 by Bagmati Province in Hetauda. Integrated with Hetauda Hospital, it provides high-standard undergraduate and postgraduate medical and allied health education.",
+    establishedYear: 2020,
+    province: "Bagmati",
+    city: "Hetauda, Makwanpur",
+    address: "Hetauda Sub-Metropolitan City-1, Makwanpur, Bagmati Province, Nepal",
+    phone: "+977-57-523122",
+    email: "info@mbahs.edu.np",
+    website: "https://mbahs.edu.np",
+    type: "PUBLIC",
+    ranking: 12,
+    totalCampuses: 1,
+    totalStudents: 520,
+    faculties: JSON.stringify([
+      "Faculty of Medicine",
+      "Faculty of Nursing",
+      "Faculty of Allied Health Sciences"
+    ]),
+    programs: JSON.stringify([
+      { faculty: "Faculty of Medicine", level: "BACHELORS", name: "MBBS (Bachelor of Medicine, Bachelor of Surgery)", duration: "5.5 Years" },
+      { faculty: "Faculty of Nursing", level: "BACHELORS", name: "BSc Nursing", duration: "4 Years" },
+      { faculty: "Faculty of Allied Health Sciences", level: "BACHELORS", name: "B.Pharmacy / BMLT / BPH", duration: "4 Years" }
+    ]),
+    admissionProcess: "Medical Education Commission (MEC CEE) central counseling matching.",
+    notices: JSON.stringify([
+      { title: "MBAHS Academic Session Admission Schedule", date: "2026-08-20", link: "https://mbahs.edu.np" }
+    ]),
+    results: JSON.stringify([
+      { title: "MEC CEE Quota Matching Results", date: "2026-07-25", link: "https://mbahs.edu.np" }
+    ]),
+    rating: 4.5,
+    reviewCount: 48,
+    isFeatured: false,
+    isPublished: true,
+  },
+  {
+    slug: "madan-bhandari-university-of-science-and-technology",
+    name: "Madan Bhandari University of Science and Technology (MBUST)",
+    description: "Established by an Act of Federal Parliament in 2022, MBUST is designed as an autonomous research-intensive national university situated in Chitlang. It is dedicated to cutting-edge research and postgraduate degrees in Artificial Intelligence, Forest Biomaterials, and Sustainable Engineering.",
+    establishedYear: 2022,
+    province: "Bagmati",
+    city: "Chitlang, Makwanpur",
+    address: "Chitlang Campus, Thaha Municipality, Makwanpur, Bagmati Province, Nepal",
+    phone: "+977-1-4797034",
+    email: "info@mbust.edu.np",
+    website: "https://mbust.edu.np",
+    type: "PUBLIC",
+    ranking: 13,
+    totalCampuses: 1,
+    totalStudents: 220,
+    faculties: JSON.stringify([
+      "Department of Artificial Intelligence",
+      "Department of Forest Biomaterials",
+      "Department of Organic Agriculture",
+      "Department of Smart Infrastructure"
+    ]),
+    programs: JSON.stringify([
+      { faculty: "Department of Artificial Intelligence", level: "MASTERS", name: "M.Sc. in Artificial Intelligence (AI)", duration: "2 Years" },
+      { faculty: "Department of Forest Biomaterials", level: "MASTERS", name: "M.Sc. in Forest Biomaterials and Technology", duration: "2 Years" },
+      { faculty: "Department of Organic Agriculture", level: "MASTERS", name: "M.Sc. in Organic Agriculture", duration: "2 Years" },
+      { faculty: "Department of Artificial Intelligence", level: "PHD", name: "Ph.D. in Science & Technology", duration: "3-5 Years" }
+    ]),
+    admissionProcess: "MBUST Graduate Entrance Examination, Research Proposal evaluation, and panel interview.",
+    notices: JSON.stringify([
+      { title: "M.Sc. AI and Biomaterials Fellowship Call", date: "2026-08-25", link: "https://mbust.edu.np" }
+    ]),
+    results: JSON.stringify([
+      { title: "Graduate Research Fellow Selected Candidates", date: "2026-07-30", link: "https://mbust.edu.np" }
+    ]),
+    rating: 4.7,
+    reviewCount: 35,
+    isFeatured: true,
+    isPublished: true,
+  },
 ];

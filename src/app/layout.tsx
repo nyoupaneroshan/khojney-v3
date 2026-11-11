@@ -51,9 +51,6 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Khojney Team" }],
   creator: "Khojney",
-  alternates: {
-    canonical: "/",
-  },
   icons: {
     icon: "/icon.png",
     shortcut: "/favicon.ico",

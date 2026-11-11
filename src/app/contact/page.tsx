@@ -6,8 +6,18 @@ import { getSession } from "@/lib/auth-server";
 import { ContactForm } from "@/components/khojney/contact-form";
 
 export const metadata: Metadata = {
-  title: "Contact Us",
-  description: "Get in touch with the Khojney team. We'd love to hear from you.",
+  title: "Contact Us — Get in Touch with Khojney Team",
+  description:
+    "Have questions, suggestions, or partnership inquiries? Contact the Khojney team in Kathmandu, Nepal. We are here to help.",
+  alternates: {
+    canonical: "/contact",
+  },
+  openGraph: {
+    title: "Contact Us — Get in Touch with Khojney Team",
+    description:
+      "Have questions, suggestions, or partnership inquiries? Contact the Khojney team in Kathmandu, Nepal. We are here to help.",
+    url: "/contact",
+  },
 };
 
 export const dynamic = "force-dynamic";
