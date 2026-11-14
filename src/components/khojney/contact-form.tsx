@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, CheckCircle2, Send } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "./auth-context";
 
 interface ContactFormProps {
   defaultEmail?: string | null;
@@ -15,6 +16,9 @@ interface ContactFormProps {
 }
 
 export function ContactForm({ defaultEmail, defaultName }: ContactFormProps) {
+  const { user } = useSession();
+  const initialEmail = defaultEmail ?? user?.email ?? "";
+  const initialName = defaultName ?? user?.name ?? "";
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -55,11 +59,11 @@ export function ContactForm({ defaultEmail, defaultName }: ContactFormProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">Full Name *</Label>
-          <Input id="name" name="name" required defaultValue={defaultName ?? ""} placeholder="Ram Sharma" />
+          <Input id="name" name="name" required defaultValue={initialName} placeholder="Ram Sharma" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email *</Label>
-          <Input id="email" name="email" type="email" required defaultValue={defaultEmail ?? ""} placeholder="you@example.com" />
+          <Input id="email" name="email" type="email" required defaultValue={initialEmail} placeholder="you@example.com" />
         </div>
       </div>
       <div className="space-y-2">

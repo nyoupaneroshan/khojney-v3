@@ -7,9 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useSession } from "@/components/khojney/auth-context";
 interface CU { name: string | null; image: string | null; }
 interface CI { id: string; content: string; upvotes: number; isPinned: boolean; createdAt: string; userId: string; user: CU; replies?: CI[]; }
-export function CommentSection({ entity, entityId, isLoggedIn }: { entity: string; entityId: string; isLoggedIn: boolean }) {
+export function CommentSection({ entity, entityId, isLoggedIn: propLoggedIn }: { entity: string; entityId: string; isLoggedIn?: boolean }) {
+  const { user } = useSession();
+  const isLoggedIn = propLoggedIn !== undefined ? propLoggedIn : !!user;
   const [comments, setComments] = useState<CI[]>([]); const [loading, setLoading] = useState(true);
   const [content, setContent] = useState(""); const [submitting, setSubmitting] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null); const [replyContent, setReplyContent] = useState("");

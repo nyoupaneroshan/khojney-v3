@@ -8,7 +8,6 @@ import {
   Percent,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListPageHeader } from "@/components/khojney/list-page-header";
 import { FiltersShell, ClearFiltersLink } from "@/components/khojney/filters-shell";
@@ -61,7 +60,6 @@ export default async function InsuranceListPage({
 }: {
   searchParams: Promise<SearchParamsLike>;
 }) {
-  const user = await getSession();
   const sp = await searchParams;
 
   const q = asString(sp.q)?.trim() ?? "";
@@ -113,7 +111,7 @@ export default async function InsuranceListPage({
   }));
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <ListPageHeader
         title="Insurance Companies in Nepal"
         description="Comprehensive directory of Nepal Insurance Authority licensed insurers. Compare claim settlement percentages, life endowment plans, general policies, and solvency ratings."

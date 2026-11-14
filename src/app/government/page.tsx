@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Building2, Landmark, Clock, Banknote, ArrowRight } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListPageHeader } from "@/components/khojney/list-page-header";
 import { FiltersShell, ClearFiltersLink } from "@/components/khojney/filters-shell";
@@ -45,7 +44,6 @@ export default async function GovernmentListPage({
 }: {
   searchParams: Promise<SearchParamsLike>;
 }) {
-  const user = await getSession();
   const sp = await searchParams;
 
   const q = asString(sp.q)?.trim() ?? "";
@@ -83,7 +81,7 @@ export default async function GovernmentListPage({
   const activeFilterCount = [q, category].filter(Boolean).length;
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <ListPageHeader
         title="Government Services in Nepal"
         description="Step-by-step guides, required documents, fees, and contact details for every major Nepali government service — all in one place."

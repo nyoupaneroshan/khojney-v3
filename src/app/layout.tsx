@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/khojney/auth-context";
 import { AIAssistant } from "@/components/khojney/ai-assistant";
 
 const inter = Inter({
@@ -119,7 +120,9 @@ export default function RootLayout({
         </Script>
 
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </ThemeProvider>
         <AIAssistant />
         <Toaster />

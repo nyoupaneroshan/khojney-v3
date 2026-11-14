@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
 import { CommunityHub } from "@/components/khojney/community-hub";
 
 export const metadata: Metadata = {
@@ -18,8 +17,12 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
-export default async function CommunityPage() {
-  const user = await getSession();
-  return (<AppShell user={user}><CommunityHub isLoggedIn={!!user} userName={user?.name??null} /></AppShell>);
+export const revalidate = 300;
+
+export default function CommunityPage() {
+  return (
+    <AppShell>
+      <CommunityHub />
+    </AppShell>
+  );
 }

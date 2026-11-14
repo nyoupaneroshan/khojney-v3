@@ -14,7 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedScholarshipBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { EntityBadge } from "@/components/khojney/entity-badge";
@@ -53,14 +53,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const items = await db.scholarship.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return items.map((s) => ({ slug: s.slug }));
+}
+
 export default async function ScholarshipDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
-
-  const scholarship = await db.scholarship.findUnique({
-    where: { slug },
-    include: { category: true },
-  });
+  const scholarship = await getCachedScholarshipBySlug(slug);
 
   if (!scholarship || !scholarship.isPublished) notFound();
 
@@ -99,7 +104,7 @@ export default async function ScholarshipDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
 
       <div className="border-b bg-gradient-to-b from-secondary/40 to-background">

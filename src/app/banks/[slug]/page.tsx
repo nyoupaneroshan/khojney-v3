@@ -20,7 +20,7 @@ import {
   Star,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedBankBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { StarRating } from "@/components/khojney/star-rating";
@@ -92,11 +92,19 @@ function formatRate(min: number | null, max: number | null): string {
   return `${v}%`;
 }
 
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const banks = await db.bank.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return banks.map((b) => ({ slug: b.slug }));
+}
+
 export default async function BankDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
-
-  const bank = await db.bank.findUnique({ where: { slug } });
+  const bank = await getCachedBankBySlug(slug);
 
   if (!bank || !bank.isPublished) notFound();
 
@@ -141,7 +149,7 @@ export default async function BankDetailPage({ params }: Params) {
   const fdRate = formatRate(bank.fixedDepositRateMin, bank.fixedDepositRateMax);
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
 
       {/* Hero */}
@@ -490,7 +498,6 @@ export default async function BankDetailPage({ params }: Params) {
                       <ReviewForm
                         entity="BANK"
                         entityId={bank.id}
-                        isLoggedIn={!!user}
                         redirectPath={`/banks/${bank.slug}`}
                       />
                       <Separator />

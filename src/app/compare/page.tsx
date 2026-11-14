@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
 import { CompareTool } from "@/components/khojney/compare-tool";
 
 export const metadata: Metadata = {
@@ -19,10 +18,9 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function ComparePage() {
-  const user = await getSession();
   const [colleges, schools] = await Promise.all([
     db.college.findMany({
       where: { isPublished: true },
@@ -47,7 +45,7 @@ export default async function ComparePage() {
   ]);
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <section className="border-b border-border bg-gradient-to-br from-red-50/40 via-white to-blue-50/30">
         <div className="container-app py-12 md:py-16 text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">

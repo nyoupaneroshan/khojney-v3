@@ -18,7 +18,7 @@ import {
   Star,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedInsuranceBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { StarRating } from "@/components/khojney/star-rating";
@@ -84,13 +84,21 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const companies = await db.insuranceCompany.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+    take: 100,
+  });
+  return companies.map((c) => ({ slug: c.slug }));
+}
+
 export default async function InsuranceCompanyDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
 
-  const company = await db.insuranceCompany.findUnique({
-    where: { slug },
-  });
+  const company = await getCachedInsuranceBySlug(slug);
 
   if (!company || !company.isPublished) notFound();
 
@@ -141,7 +149,7 @@ export default async function InsuranceCompanyDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLdData} />
 
       <div className="container-app py-6">
@@ -369,7 +377,6 @@ export default async function InsuranceCompanyDetailPage({ params }: Params) {
                 <ReviewForm
                   entity="INSURANCE"
                   entityId={company.id}
-                  isLoggedIn={!!user}
                 />
 
                 <Separator />

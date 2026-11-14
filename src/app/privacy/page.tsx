@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Khojney",
@@ -10,12 +9,9 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function PrivacyPage() {
-  const user = await getSession();
+export default function PrivacyPage() {
   return (
-    <AppShell user={user}>
+    <AppShell>
       <div className="container-app py-12 md:py-16">
         <div className="mx-auto max-w-3xl">
           <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>

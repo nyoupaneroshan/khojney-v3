@@ -2,13 +2,40 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
 import { JsonLd } from "@/components/khojney/json-ld";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MapPin, ArrowRight } from "lucide-react";
 
 export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const [colleges, schools] = await Promise.all([
+    db.college.findMany({
+      where: { isPublished: true, province: { not: null }, city: { not: null } },
+      select: { province: true, city: true },
+      take: 50,
+    }),
+    db.school.findMany({
+      where: { isPublished: true, province: { not: null }, city: { not: null } },
+      select: { province: true, city: true },
+      take: 50,
+    }),
+  ]);
+  const set = new Set<string>();
+  const params: { province: string; city: string }[] = [];
+  for (const item of [...colleges, ...schools]) {
+    if (!item.province || !item.city) continue;
+    const pSlug = item.province.toLowerCase().replace(/\s+/g, "-");
+    const cSlug = item.city.toLowerCase().replace(/\s+/g, "-");
+    const key = `${pSlug}/${cSlug}`;
+    if (!set.has(key)) {
+      set.add(key);
+      params.push({ province: pSlug, city: cSlug });
+    }
+  }
+  return params;
+}
 
 interface PageProps {
   params: Promise<{ province: string; city: string }>;
@@ -49,7 +76,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function CityPage({ params }: PageProps) {
-  const user = await getSession();
   const { province, city } = await params;
   const provinceName = humanize(province);
   const cityName = humanize(city);
@@ -175,7 +201,7 @@ export default async function CityPage({ params }: PageProps) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={faqLd} />

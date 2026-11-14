@@ -17,7 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedNepseStockBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { JsonLd } from "@/components/khojney/json-ld";
@@ -87,13 +87,21 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const stocks = await db.nepseStock.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+    take: 100,
+  });
+  return stocks.map((s) => ({ slug: s.slug }));
+}
+
 export default async function NepseStockDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
 
-  const stock = await db.nepseStock.findUnique({
-    where: { slug },
-  });
+  const stock = await getCachedNepseStockBySlug(slug);
 
   if (!stock || !stock.isPublished) notFound();
 
@@ -130,7 +138,7 @@ export default async function NepseStockDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLdData} />
 
       <div className="container-app py-6">

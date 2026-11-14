@@ -19,7 +19,7 @@ import {
   Eye,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedJobBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { AvatarInitial } from "@/components/khojney/avatar-initial";
@@ -92,13 +92,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const jobs = await db.job.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return jobs.map((j) => ({ slug: j.slug }));
+}
+
 export default async function JobDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
-
-  const job = await db.job.findUnique({
-    where: { slug },
-  });
+  const job = await getCachedJobBySlug(slug);
 
   if (!job || !job.isPublished) notFound();
 
@@ -171,7 +177,7 @@ export default async function JobDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
 
       {/* Hero */}

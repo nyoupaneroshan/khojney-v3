@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
@@ -11,6 +10,11 @@ import { ArrowRight, FileQuestion, Clock, Trophy } from "lucide-react";
 import { getCachedExamCategories, getCachedPublishedExams } from "@/lib/cache";
 
 export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const categories = await getCachedExamCategories();
+  return categories.map((c) => ({ category: c.slug }));
+}
 
 interface PageProps {
   params: Promise<{ category: string }>;
@@ -37,7 +41,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CategoryLandingPage({ params }: PageProps) {
   const { category } = await params;
-  const user = await getSession();
 
   // Use cached exam categories.
   const categories = await getCachedExamCategories();
@@ -50,7 +53,7 @@ export default async function CategoryLandingPage({ params }: PageProps) {
 
   if (exams.length === 0) {
     return (
-      <AppShell user={user}>
+      <AppShell>
         <div className="container-app py-20 text-center">
           <h1 className="text-2xl font-bold mb-4">No mock exams found in {cat.name}</h1>
           <p className="text-muted-foreground mb-6">
@@ -88,7 +91,7 @@ export default async function CategoryLandingPage({ params }: PageProps) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}

@@ -10,7 +10,6 @@ import {
   Percent,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListPageHeader } from "@/components/khojney/list-page-header";
 import { FiltersShell, ClearFiltersLink } from "@/components/khojney/filters-shell";
@@ -70,7 +69,6 @@ export default async function NepseListPage({
 }: {
   searchParams: Promise<SearchParamsLike>;
 }) {
-  const user = await getSession();
   const sp = await searchParams;
 
   const q = asString(sp.q)?.trim() ?? "";
@@ -123,7 +121,7 @@ export default async function NepseListPage({
   }));
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <ListPageHeader
         title="NEPSE Share Market"
         description="Directory of Nepal Stock Exchange (NEPSE) listed equities. Track Last Traded Prices (LTP), P/E ratios, earnings per share, and dividend returns across all sectors."

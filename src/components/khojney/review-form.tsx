@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useSession } from "@/components/khojney/auth-context";
 
 interface ReviewFormProps {
   entity: "COLLEGE" | "SCHOOL" | "UNIVERSITY" | "SCHOLARSHIP" | "BANK" | "HOSPITAL" | "INSURANCE";
@@ -17,7 +18,7 @@ interface ReviewFormProps {
   /** Slug of the entity (for redirect after submit if needed). */
   entitySlug?: string;
   /** Whether the current user is logged in. */
-  isLoggedIn: boolean;
+  isLoggedIn?: boolean;
   /** Detail page path for redirect on success. */
   redirectPath?: string;
 }
@@ -30,9 +31,11 @@ interface ReviewFormProps {
 export function ReviewForm({
   entity,
   entityId,
-  isLoggedIn,
+  isLoggedIn: propLoggedIn,
   redirectPath,
 }: ReviewFormProps) {
+  const { user } = useSession();
+  const isLoggedIn = propLoggedIn !== undefined ? propLoggedIn : !!user;
   const router = useRouter();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);

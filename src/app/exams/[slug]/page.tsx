@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import {
   Breadcrumb,
@@ -46,7 +45,16 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 
-export const revalidate = 300; // ISR: 5 minutes for performance & instant caching
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const exams = await db.exam.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+    take: 100,
+  });
+  return exams.map((e) => ({ slug: e.slug }));
+}
 
 interface Params {
   slug: string;
@@ -113,7 +121,6 @@ export default async function ExamDetailPage({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const user = await getSession();
 
   const exam = await db.exam.findUnique({
     where: { slug, isPublished: true },
@@ -143,7 +150,7 @@ export default async function ExamDetailPage({
     }, 0);
 
     return (
-      <AppShell user={user}>
+      <AppShell>
         {/* Breadcrumb + hero */}
         <div className="border-b border-border/80 bg-gradient-to-b from-primary/5 via-muted/20 to-background">
           <div className="container-app py-8 md:py-12">
@@ -380,7 +387,7 @@ export default async function ExamDetailPage({
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       {/* Structured data for Google SERP features */}
       <script
         type="application/ld+json"
@@ -527,26 +534,20 @@ export default async function ExamDetailPage({
               <Button asChild size="lg" className="w-full text-base font-bold shadow-md bg-primary hover:bg-primary/90 h-12">
                 <Link href={`/exams/${exam.slug}/take`}>
                   <Play className="h-4 w-4 mr-2 fill-current" />
-                  {user ? "Start Exam Now" : "Start Free Practice (Instant Mode)"}
+                  Start Free Practice (Instant Mode)
                 </Link>
               </Button>
 
-              {!user ? (
-                <div className="text-center text-xs text-muted-foreground pt-1">
-                  Want to record your rank on the leaderboard?{" "}
-                  <Link href={`/login?callbackUrl=/exams/${exam.slug}/take`} className="font-semibold text-primary hover:underline">
-                    Log in
-                  </Link>{" "}
-                  or{" "}
-                  <Link href="/login?mode=register" className="font-semibold text-primary hover:underline">
-                    Create free account
-                  </Link>
-                </div>
-              ) : (
-                <p className="text-center text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                  Logged in as {user.name ?? user.email} • Result will sync to your dashboard
-                </p>
-              )}
+              <div className="text-center text-xs text-muted-foreground pt-1">
+                Want to record your rank on the leaderboard?{" "}
+                <Link href={`/login?callbackUrl=/exams/${exam.slug}/take`} className="font-semibold text-primary hover:underline">
+                  Log in
+                </Link>{" "}
+                or{" "}
+                <Link href="/login?mode=register" className="font-semibold text-primary hover:underline">
+                  Create free account
+                </Link>
+              </div>
             </CardContent>
 
             <div className="p-4 bg-muted/30 border-t border-border/40 text-[11px] text-muted-foreground text-center rounded-b-xl">

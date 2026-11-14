@@ -18,7 +18,6 @@ import {
   FeaturedMutualFunds,
   FeaturedInsurance,
 } from "@/components/khojney/featured-phase3";
-import { getSession } from "@/lib/auth-server";
 import {
   getCachedTrendingSearches,
   getCachedFeaturedColleges,
@@ -57,11 +56,6 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  // getSession is cached per-request via React cache() — calling it here is
-  // free even if child components also call it. The page content itself is
-  // fully public; only the AppShell avatar uses the user.
-  const user = await getSession();
-
   // Batch all featured-content fetches in parallel. Each call hits the
   // unstable_cache layer first, falling back to the DB only on cache miss.
   const [
@@ -144,7 +138,7 @@ export default async function HomePage() {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={websiteJsonLd} />
       <JsonLd data={organizationJsonLd} />
       <HomeHero trending={trending} />

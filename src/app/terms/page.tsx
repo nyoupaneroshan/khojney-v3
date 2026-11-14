@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
 
 export const metadata: Metadata = {
   title: "Terms of Service | Khojney",
@@ -10,12 +9,9 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function TermsPage() {
-  const user = await getSession();
+export default function TermsPage() {
   return (
-    <AppShell user={user}>
+    <AppShell>
       <div className="container-app py-12 md:py-16">
         <div className="mx-auto max-w-3xl">
           <h1 className="text-4xl font-bold tracking-tight">Terms of Service</h1>

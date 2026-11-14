@@ -17,7 +17,7 @@ import {
   User,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedSchoolBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { AvatarInitial } from "@/components/khojney/avatar-initial";
@@ -70,13 +70,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const schools = await db.school.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return schools.map((s) => ({ slug: s.slug }));
+}
+
 export default async function SchoolDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
-
-  const school = await db.school.findUnique({
-    where: { slug },
-  });
+  const school = await getCachedSchoolBySlug(slug);
 
   if (!school || !school.isPublished) notFound();
 
@@ -119,7 +125,7 @@ export default async function SchoolDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
 
       <div className="border-b bg-gradient-to-b from-secondary/40 to-background">
@@ -300,7 +306,6 @@ export default async function SchoolDetailPage({ params }: Params) {
                   <ReviewForm
                     entity="SCHOOL"
                     entityId={school.id}
-                    isLoggedIn={!!user}
                     redirectPath={`/schools/${school.slug}`}
                   />
                   <Separator />

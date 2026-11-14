@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
@@ -32,8 +31,6 @@ export const metadata: Metadata = {
 };
 
 export default async function MockExamsLandingPage() {
-  const user = await getSession();
-
   // Use cached queries — DB is only hit on cache miss (every 5 min for exams,
   // every 1 hour for categories). Subsequent page loads serve from cache.
   const [exams, categories] = await Promise.all([
@@ -50,7 +47,7 @@ export default async function MockExamsLandingPage() {
   }
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <div className="container-app pt-4">
         <BreadcrumbNav
           items={[

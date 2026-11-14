@@ -17,7 +17,6 @@ import {
   User,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { getCachedCollegeBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
@@ -76,9 +75,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export const revalidate = 3600; // ISR: 1 hour
 
+export async function generateStaticParams() {
+  const colleges = await db.college.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return colleges.map((c) => ({ slug: c.slug }));
+}
+
 export default async function CollegeDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
 
   // Use cached query — no DB hit on cache hit (1 hour TTL).
   const college = await getCachedCollegeBySlug(slug);
@@ -124,7 +130,7 @@ export default async function CollegeDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
 
       {/* Hero */}
@@ -355,7 +361,6 @@ export default async function CollegeDetailPage({ params }: Params) {
                   <ReviewForm
                     entity="COLLEGE"
                     entityId={college.id}
-                    isLoggedIn={!!user}
                     redirectPath={`/colleges/${college.slug}`}
                   />
                   <Separator />

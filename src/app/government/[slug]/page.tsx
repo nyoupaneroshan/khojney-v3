@@ -16,7 +16,7 @@ import {
   Eye,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedGovernmentServiceBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { InfoCard, InfoRow } from "@/components/khojney/info-card";
@@ -70,13 +70,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const items = await db.governmentService.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return items.map((g) => ({ slug: g.slug }));
+}
+
 export default async function GovernmentServiceDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
-
-  const service = await db.governmentService.findUnique({
-    where: { slug },
-  });
+  const service = await getCachedGovernmentServiceBySlug(slug);
 
   if (!service || !service.isPublished) notFound();
 
@@ -148,7 +154,7 @@ export default async function GovernmentServiceDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
 
       {/* Hero */}

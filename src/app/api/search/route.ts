@@ -84,9 +84,9 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Reuse the cached session — `getSession()` is wrapped in `cache()`, so
-  // additional calls within the same request are free.
-  const session = await getSession();
+  // Only look up session if session cookie is actually present
+  const hasSessionCookie = req.cookies.has("khojney_session");
+  const session = hasSessionCookie ? await getSession() : null;
 
   const results: SearchHit[] = [];
   const wantsAll = !moduleParam;
@@ -163,14 +163,21 @@ export async function GET(req: NextRequest) {
       });
   }
 
-  return NextResponse.json({
-    results: paged,
-    total,
-    page,
-    pageSize,
-    q,
-    modules: Object.keys(MODULE_LABELS),
-  });
+  return NextResponse.json(
+    {
+      results: paged,
+      total,
+      page,
+      pageSize,
+      q,
+      modules: Object.keys(MODULE_LABELS),
+    },
+    {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    }
+  );
 }
 
 // Each search helper uses `select` (not `include`) to fetch only the fields

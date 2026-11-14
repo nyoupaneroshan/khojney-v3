@@ -18,7 +18,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedMutualFundBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { InfoCard, InfoRow } from "@/components/khojney/info-card";
@@ -73,13 +73,21 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const funds = await db.mutualFund.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+    take: 100,
+  });
+  return funds.map((f) => ({ slug: f.slug }));
+}
+
 export default async function MutualFundDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
 
-  const fund = await db.mutualFund.findUnique({
-    where: { slug },
-  });
+  const fund = await getCachedMutualFundBySlug(slug);
 
   if (!fund || !fund.isPublished) notFound();
 
@@ -118,7 +126,7 @@ export default async function MutualFundDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLdData} />
 
       <div className="container-app py-6">

@@ -18,7 +18,7 @@ import {
   Building,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedHospitalBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { StarRating } from "@/components/khojney/star-rating";
@@ -76,11 +76,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const hospitals = await db.hospital.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return hospitals.map((h) => ({ slug: h.slug }));
+}
+
 export default async function HospitalDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
-
-  const hospital = await db.hospital.findUnique({ where: { slug } });
+  const hospital = await getCachedHospitalBySlug(slug);
   if (!hospital || !hospital.isPublished) notFound();
 
   // Fetch reviews for this hospital
@@ -134,7 +142,7 @@ export default async function HospitalDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLdData} />
       <div className="container-app py-8">
         <BreadcrumbNav
@@ -302,7 +310,6 @@ export default async function HospitalDetailPage({ params }: Params) {
                 <ReviewForm
                   entity="HOSPITAL"
                   entityId={hospital.id}
-                  isLoggedIn={!!user}
                 />
 
                 <Separator />

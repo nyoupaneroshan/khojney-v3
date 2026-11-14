@@ -778,3 +778,48 @@ export const getCachedBlogCategories = unstable_cache(
   ["blog-categories"],
   { revalidate: ONE_DAY, tags: [CACHE_TAGS.categories] }
 );
+
+/** Cached hospital by slug. */
+export const getCachedHospitalBySlug = unstable_cache(
+  async (slug: string) => {
+    return db.hospital.findUnique({
+      where: { slug, isPublished: true },
+    });
+  },
+  ["hospital-by-slug"],
+  { revalidate: ONE_DAY, tags: [CACHE_TAGS.featuredHospitals, "hospital-by-slug"] }
+);
+
+/** Cached NEPSE stock by slug. */
+export const getCachedNepseStockBySlug = unstable_cache(
+  async (slug: string) => {
+    return db.nepseStock.findUnique({
+      where: { slug, isPublished: true },
+    });
+  },
+  ["nepse-stock-by-slug"],
+  { revalidate: ONE_HOUR, tags: [CACHE_TAGS.featuredNepse, "nepse-by-slug"] }
+);
+
+/** Cached mutual fund by slug. */
+export const getCachedMutualFundBySlug = unstable_cache(
+  async (slug: string) => {
+    return db.mutualFund.findUnique({
+      where: { slug, isPublished: true },
+    });
+  },
+  ["mutual-fund-by-slug"],
+  { revalidate: ONE_DAY, tags: [CACHE_TAGS.featuredMutualFunds, "mutual-fund-by-slug"] }
+);
+
+/** Cached insurance company by slug. */
+export const getCachedInsuranceBySlug = unstable_cache(
+  async (slug: string) => {
+    return db.insuranceCompany.findUnique({
+      where: { slug, isPublished: true },
+    });
+  },
+  ["insurance-by-slug"],
+  { revalidate: ONE_DAY, tags: [CACHE_TAGS.featuredInsurance, "insurance-by-slug"] }
+);
+

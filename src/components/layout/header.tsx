@@ -71,11 +71,15 @@ const NAV_LINKS: NavLink[] = [
   { label: "Compare", href: "/compare" },
 ];
 
+import { useSession } from "@/components/khojney/auth-context";
+
 interface HeaderProps {
   user?: { id: string; name: string | null; email: string; role: string } | null;
 }
 
-export function Header({ user }: HeaderProps) {
+export function Header({ user: propUser }: HeaderProps) {
+  const { user: contextUser } = useSession();
+  const user = propUser !== undefined ? propUser : contextUser;
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 

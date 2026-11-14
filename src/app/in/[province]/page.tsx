@@ -2,12 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
+import { NEPAL_PROVINCES } from "@/lib/constants";
 import { JsonLd } from "@/components/khojney/json-ld";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, MapPin } from "lucide-react";
 
 export const revalidate = 3600;
+
+export function generateStaticParams() {
+  return NEPAL_PROVINCES.map((p) => ({
+    province: p.toLowerCase().replace(/\s+/g, "-"),
+  }));
+}
 
 interface PageProps {
   params: Promise<{ province: string }>;
@@ -44,7 +50,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProvincePage({ params }: PageProps) {
-  const user = await getSession();
   const { province } = await params;
   const provinceName = humanize(province);
 
@@ -115,7 +120,7 @@ export default async function ProvincePage({ params }: PageProps) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
       <JsonLd data={breadcrumbLd} />
 

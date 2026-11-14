@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import { SearchTabs } from "@/components/khojney/search-tabs";
 import { SearchResults } from "@/components/khojney/search-results";
@@ -80,7 +79,6 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const user = await getSession();
   const sp = await searchParams;
 
   const q = sp.q?.trim() ?? "";
@@ -547,20 +545,6 @@ export default async function SearchPage({
     total = all.length;
     const start = (page - 1) * pageSize;
     results = all.slice(start, start + pageSize);
-
-    // Save to search history (non-blocking) — only on first page
-    if (user && page === 1) {
-      db.searchHistory
-        .create({
-          data: {
-            userId: user.id,
-            query: q,
-            module: activeModule === "ALL" ? null : activeModule,
-            results: total,
-          },
-        })
-        .catch(() => undefined);
-    }
   } else {
     activeModule = "ALL";
   }
@@ -568,7 +552,7 @@ export default async function SearchPage({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <div className="container-app py-8 md:py-12">
         <Breadcrumb className="mb-4">
           <BreadcrumbList>

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import { ExamFilters } from "@/components/khojney/exam-filters";
 import { ExamListPagination } from "@/components/khojney/exam-list-pagination";
@@ -32,7 +31,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 const PAGE_SIZE = 12;
 
@@ -51,7 +50,6 @@ export default async function ExamsListPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const user = await getSession();
   const sp = await searchParams;
 
   const q = sp.q?.trim() ?? "";
@@ -119,7 +117,7 @@ export default async function ExamsListPage({
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <div className="container-app py-8 md:py-12">
         <Breadcrumb className="mb-4">
           <BreadcrumbList>

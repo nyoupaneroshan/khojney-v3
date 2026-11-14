@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Calendar, Clock, Eye, ArrowRight, Newspaper } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListPageHeader } from "@/components/khojney/list-page-header";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
@@ -39,7 +38,6 @@ export default async function BlogListPage({
 }: {
   searchParams: Promise<SearchParamsLike>;
 }) {
-  const user = await getSession();
   const sp = await searchParams;
 
   const q = asString(sp.q)?.trim() ?? "";
@@ -121,7 +119,7 @@ export default async function BlogListPage({
   });
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={itemListLd} />
       <ListPageHeader

@@ -9,7 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-export function CommunityHub({ isLoggedIn, userName }: { isLoggedIn: boolean; userName: string | null }) {
+import { useSession } from "@/components/khojney/auth-context";
+
+export function CommunityHub({
+  isLoggedIn: propLoggedIn,
+  userName: propUserName,
+}: {
+  isLoggedIn?: boolean;
+  userName?: string | null;
+}) {
+  const { user } = useSession();
+  const isLoggedIn = propLoggedIn !== undefined ? propLoggedIn : !!user;
+  const userName = propUserName !== undefined ? propUserName : user?.name ?? null;
   return (<div className="container-app py-8 md:py-12">
     <div className="text-center mb-8"><h1 className="text-2xl md:text-3xl font-bold tracking-tight">Khojney <span className="text-gradient-red">Community</span></h1><p className="mt-2 text-sm text-muted-foreground max-w-xl mx-auto">Contribute knowledge, help students, build Nepal's largest education community.</p></div>
     <div className="grid gap-3 sm:grid-cols-3 mb-8"><Card className="text-center"><CardContent className="pt-4"><PenLine className="h-7 w-7 text-primary mx-auto mb-1"/><h3 className="font-semibold text-sm">Guest Blogs</h3><p className="text-xs text-muted-foreground">Share your expertise</p></CardContent></Card><Card className="text-center"><CardContent className="pt-4"><HelpCircle className="h-7 w-7 text-primary mx-auto mb-1"/><h3 className="font-semibold text-sm">Suggest Questions</h3><p className="text-xs text-muted-foreground">Help others practice</p></CardContent></Card><Card className="text-center"><CardContent className="pt-4"><MessageSquare className="h-7 w-7 text-primary mx-auto mb-1"/><h3 className="font-semibold text-sm">Discussions</h3><p className="text-xs text-muted-foreground">Comment on exams</p></CardContent></Card></div>

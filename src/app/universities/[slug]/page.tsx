@@ -19,7 +19,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedUniversityBySlug } from "@/lib/cache";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { AvatarInitial } from "@/components/khojney/avatar-initial";
@@ -81,13 +81,19 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const unis = await db.university.findMany({
+    where: { isPublished: true },
+    select: { slug: true },
+  });
+  return unis.map((u) => ({ slug: u.slug }));
+}
+
 export default async function UniversityDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
-
-  const university = await db.university.findUnique({
-    where: { slug },
-  });
+  const university = await getCachedUniversityBySlug(slug);
 
   if (!university || !university.isPublished) notFound();
 
@@ -131,7 +137,7 @@ export default async function UniversityDetailPage({ params }: Params) {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
 
       <div className="border-b bg-gradient-to-b from-secondary/40 to-background">
@@ -423,7 +429,6 @@ export default async function UniversityDetailPage({ params }: Params) {
                   <ReviewForm
                     entity="UNIVERSITY"
                     entityId={university.id}
-                    isLoggedIn={!!user}
                     redirectPath={`/universities/${university.slug}`}
                   />
                   <Separator />

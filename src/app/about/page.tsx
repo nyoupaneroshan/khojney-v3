@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { Target, Sparkles, Globe, BookOpen, Users, Award } from "lucide-react";
-import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { getCachedHomepageStats } from "@/lib/cache";
 
 export const metadata: Metadata = {
   title: "About Us — Nepal's Premier Knowledge & Directory Platform | Khojney",
@@ -20,7 +19,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400;
 
 const VALUES = [
   { icon: Target, title: "Our Mission", description: "Organize every educational and informational resource in Nepal — every exam, every college, every scholarship — into one accessible, free, and trustworthy platform." },
@@ -32,21 +31,21 @@ const VALUES = [
 ];
 
 export default async function AboutPage() {
-  const user = await getSession();
+  const homeStats = await getCachedHomepageStats();
   const stats = {
-    colleges: await db.college.count(),
-    schools: await db.school.count(),
-    universities: await db.university.count(),
-    exams: await db.exam.count({ where: { isPublished: true } }),
-    scholarships: await db.scholarship.count(),
-    posts: await db.blogPost.count({ where: { status: "PUBLISHED" } }),
-    banks: await db.bank.count(),
-    jobs: await db.job.count({ where: { isPublished: true } }),
-    govtServices: await db.governmentService.count({ where: { isPublished: true } }),
+    colleges: homeStats.colleges,
+    schools: homeStats.schools,
+    universities: homeStats.universities,
+    exams: homeStats.exams,
+    scholarships: homeStats.scholarships,
+    posts: homeStats.blogPosts,
+    banks: homeStats.banks,
+    jobs: homeStats.jobs,
+    govtServices: homeStats.government,
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <section className="border-b border-border bg-gradient-to-br from-red-50/40 via-white to-blue-50/30">
         <div className="container-app py-16 md:py-24 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary mb-6">

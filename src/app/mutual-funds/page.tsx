@@ -9,7 +9,6 @@ import {
   Coins,
 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import { ListPageHeader } from "@/components/khojney/list-page-header";
 import { FiltersShell, ClearFiltersLink } from "@/components/khojney/filters-shell";
@@ -65,7 +64,6 @@ export default async function MutualFundsListPage({
 }: {
   searchParams: Promise<SearchParamsLike>;
 }) {
-  const user = await getSession();
   const sp = await searchParams;
 
   const q = asString(sp.q)?.trim() ?? "";
@@ -129,7 +127,7 @@ export default async function MutualFundsListPage({
   }));
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <ListPageHeader
         title="Mutual Funds in Nepal"
         description="Comprehensive directory of SEBON-regulated mutual funds. Compare Net Asset Values (NAV), fund sizes, dividend returns, and portfolio allocations."

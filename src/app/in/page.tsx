@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
 import { JsonLd } from "@/components/khojney/json-ld";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, MapPin } from "lucide-react";
@@ -17,7 +16,6 @@ export const metadata: Metadata = {
 };
 
 export default async function BrowseByLocationPage() {
-  const user = await getSession();
 
   // Count listings per province
   const provinceCounts: Record<string, number> = {};
@@ -42,7 +40,7 @@ export default async function BrowseByLocationPage() {
   };
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
       <section className="border-b border-border bg-gradient-to-br from-red-50/40 via-white to-blue-50/30">
         <div className="container-app py-12 md:py-16">

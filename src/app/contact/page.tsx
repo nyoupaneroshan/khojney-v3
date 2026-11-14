@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/app-shell";
 import { Mail, Phone, MapPin, Clock, Send } from "lucide-react";
-import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { ContactForm } from "@/components/khojney/contact-form";
 
 export const metadata: Metadata = {
@@ -20,10 +18,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function ContactPage() {
-  const user = await getSession();
+export default function ContactPage() {
   const channels = [
     { icon: Mail, label: "Email", value: "hello@khojney.com", href: "mailto:hello@khojney.com" },
     { icon: Phone, label: "Phone", value: "+977-1-4000000", href: "tel:+97714000000" },
@@ -32,7 +27,7 @@ export default async function ContactPage() {
   ];
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <section className="border-b border-border bg-gradient-to-br from-red-50/40 via-white to-blue-50/30">
         <div className="container-app py-16 text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
@@ -98,7 +93,7 @@ export default async function ContactPage() {
                 <p className="text-sm text-muted-foreground mb-6">
                   We typically respond within 1-2 business days.
                 </p>
-                <ContactForm defaultEmail={user?.email} defaultName={user?.name} />
+                <ContactForm />
               </div>
             </div>
           </div>

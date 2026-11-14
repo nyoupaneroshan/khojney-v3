@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Calendar, Clock, Eye, ArrowLeft, Newspaper, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
 import { AppShell } from "@/components/layout/app-shell";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
 import { EntityBadge } from "@/components/khojney/entity-badge";
@@ -16,7 +15,16 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { formatDate, formatNumber } from "@/components/khojney/format";
 import { getCachedBlogPostBySlug } from "@/lib/cache";
 
-export const revalidate = 300; // ISR: 5 minutes
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const posts = await db.blogPost.findMany({
+    where: { status: "PUBLISHED" },
+    select: { slug: true },
+    take: 100,
+  });
+  return posts.map((p) => ({ slug: p.slug }));
+}
 
 interface Params {
   params: Promise<{ slug: string }>;
@@ -52,7 +60,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function BlogDetailPage({ params }: Params) {
   const { slug } = await params;
-  const user = await getSession();
 
   const post = await getCachedBlogPostBySlug(slug);
   if (!post || post.status !== "PUBLISHED") notFound();
@@ -104,7 +111,7 @@ export default async function BlogDetailPage({ params }: Params) {
   const authorName = post.author?.name || "Khojney Editorial Team";
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       <JsonLd data={jsonLd} />
 
       {/* Editorial Header (Left-anchored, high authority) */}

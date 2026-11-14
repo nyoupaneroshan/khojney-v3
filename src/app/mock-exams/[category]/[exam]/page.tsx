@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth-server";
+import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BreadcrumbNav } from "@/components/khojney/breadcrumb-nav";
@@ -37,7 +37,21 @@ import {
   getCachedExamChildSets,
 } from "@/lib/cache";
 
-export const revalidate = 300; // ISR: 5 minutes
+export const revalidate = 3600; // ISR: 1 hour
+
+export async function generateStaticParams() {
+  const exams = await db.exam.findMany({
+    where: { isPublished: true, categoryId: { not: null } },
+    select: { slug: true, category: { select: { slug: true } } },
+    take: 100,
+  });
+  return exams
+    .filter((e) => e.category?.slug)
+    .map((e) => ({
+      category: e.category!.slug,
+      exam: e.slug,
+    }));
+}
 
 interface PageProps {
   params: Promise<{ category: string; exam: string }>;
@@ -125,7 +139,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ExamLandingPage({ params }: PageProps) {
   const { category, exam } = await params;
-  const user = await getSession();
 
   // Use cached queries — DB is only hit on cache miss.
   // getCategory comes from the cached exam categories list.
@@ -212,7 +225,7 @@ export default async function ExamLandingPage({ params }: PageProps) {
   // ─── Render ──────────────────────────────────────────────────
 
   return (
-    <AppShell user={user}>
+    <AppShell>
       {/* JSON-LD structured data */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
